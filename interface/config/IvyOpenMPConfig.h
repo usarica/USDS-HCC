@@ -24,11 +24,12 @@
   #endif
   /**
    * @brief Minimum flattened size (nx*ny, nx*ny*nz) before enabling OpenMP for
-   * multi-dimensional loops. Override at build time with
+   * multi-dimensional loops. Defaults to NUM_CPU_THREADS_THRESHOLD so the two
+   * thresholds stay in sync; override at build time with
    * -DNUM_CPU_THREADS_THRESHOLD_ND=<n>.
    */
   #ifndef NUM_CPU_THREADS_THRESHOLD_ND
-  #define NUM_CPU_THREADS_THRESHOLD_ND 8
+  #define NUM_CPU_THREADS_THRESHOLD_ND NUM_CPU_THREADS_THRESHOLD
   #endif
 #endif
 

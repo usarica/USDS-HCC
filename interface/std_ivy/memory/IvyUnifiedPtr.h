@@ -10,11 +10,10 @@
 #include "std_ivy/IvyCstdio.h"
 #include "std_ivy/memory/IvyUnifiedPtr.hh"
 
-// std::atomic_ref is used for lock-free reference counting on the host execution path.
-// On the CUDA device path, native atomic intrinsics are used instead (see inc_dec_counter).
-#if (DEVICE_CODE == DEVICE_CODE_HOST)
-#include <atomic>
-#endif
+// Reference counting uses atomic_ref over the heap-allocated counter so concurrent
+// copies/destructions are race-free. IvyAtomic selects cuda::atomic_ref on the CUDA
+// build and std::atomic_ref otherwise, giving consistent host/device semantics.
+#include "std_ivy/IvyAtomic.h"
 
 
 namespace std_ivy{
@@ -579,11 +578,7 @@ namespace std_ivy{
     if (!ref_count_) return 0;
     constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
     if (exec_mem_type_ == def_mem_type){
-#if (DEVICE_CODE == DEVICE_CODE_HOST)
-      return std::atomic_ref<counter_type>(*ref_count_).load(std::memory_order_acquire);
-#else
-      return *ref_count_;
-#endif
+      return std_atomic::atomic_ref<counter_type>(*ref_count_).load(std_atomic::memory_order_acquire);
     }
     else{
       counter_type* p_ref_count_ = nullptr;
@@ -619,16 +614,11 @@ namespace std_ivy{
       // Mutate it atomically so concurrent copies/destructions of shared_ptr are race-free.
       // Increments may use relaxed ordering; the decrement must be acquire/release so that
       // the thread observing the transition to zero sees all prior writes before freeing.
-#if (DEVICE_CODE == DEVICE_CODE_HOST)
-      std::atomic_ref<counter_type> a_ref_count(*ref_count_);
-      if (do_inc) return a_ref_count.fetch_add(__STATIC_CAST__(counter_type, 1), std::memory_order_relaxed);
-      else return a_ref_count.fetch_sub(__STATIC_CAST__(counter_type, 1), std::memory_order_acq_rel);
-#else
-      // CUDA device path: atomicAdd returns the old value. Subtraction is performed by adding
-      // the two's-complement of 1 (wrap-around), which still yields the previous value.
-      if (do_inc) return atomicAdd(ref_count_, __STATIC_CAST__(counter_type, 1));
-      else return atomicAdd(ref_count_, __STATIC_CAST__(counter_type, -1));
-#endif
+      // std_atomic::atomic_ref maps to cuda::atomic_ref (CUDA) or std::atomic_ref (host),
+      // so both execution spaces share the same ordering guarantees.
+      std_atomic::atomic_ref<counter_type> a_ref_count(*ref_count_);
+      if (do_inc) return a_ref_count.fetch_add(__STATIC_CAST__(counter_type, 1), std_atomic::memory_order_relaxed);
+      else return a_ref_count.fetch_sub(__STATIC_CAST__(counter_type, 1), std_atomic::memory_order_acq_rel);
     }
     else{
       counter_type prev = 0;

@@ -634,7 +634,9 @@ namespace IvyMemoryHelpers{
       assert(0);
     }
     if (n_tgt_init!=n_tgt){
-      res &= std_ivy::deallocator_primitive<T>::destroy(target, n_tgt_init, type_tgt, stream);
+      // Only destroy an existing allocation; destroying a null target would return
+      // false (see destruct_fcnal) and wrongly poison res, skipping the copy below.
+      if (target) res &= std_ivy::deallocator_primitive<T>::destroy(target, n_tgt_init, type_tgt, stream);
       res &= std_ivy::allocator_primitive<T>::allocate(target, n_tgt, type_tgt, stream);
     }
     if (res){
