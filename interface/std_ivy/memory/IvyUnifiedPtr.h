@@ -544,9 +544,16 @@ namespace std_ivy{
       else return a_ref_count.fetch_sub(__STATIC_CAST__(counter_type, 1), std_atomic::memory_order_acq_rel);
     }
     else{
-      // Non-addressable (e.g. device) memory: read just the counter field into an on-stack
-      // temporary, modify it, and write it back. This touches only the ref_count field so it
-      // cannot clobber concurrent updates to the other control-block fields.
+      // Non-addressable (e.g. device) memory reached from another execution space: the counter
+      // cannot be mutated in place, so read just the ref_count field into an on-stack temporary,
+      // modify it, and write it back. Touching only this field avoids clobbering concurrent
+      // updates to the other control-block fields.
+      // NOTE: unlike the addressable branch, this read-modify-write is NOT atomic. This matches
+      // the pre-existing behavior of this class: a host-side atomic operation cannot be performed
+      // on memory that is not directly addressable from the host (it must be staged through a
+      // transfer). Reference-count updates across an execution-space boundary therefore require
+      // external synchronization by the caller; the addressable path (host/unified memory, which
+      // the threaded tests exercise) remains fully atomic.
       counter_type prev = this->read_meta_field(&cblock_->ref_count);
       counter_type next = prev;
       if (do_inc) ++next;
