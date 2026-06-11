@@ -1,4 +1,4 @@
-# IvyHeterogeneousCore
+# USDS-HCC
 
 A modified, header-first C++20 core library that provides STL-like components for heterogeneous execution (CPU + optional CUDA GPU), with explicit memory-domain control, custom allocators, stream/event abstractions, and autodiff-oriented math/data structures.
 
