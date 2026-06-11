@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   pull_request:
 
+permissions:
+  contents: read
+
 # Host (CPU/g++) memory- and thread-safety gates for the header-only core.
 # The CUDA path is not exercised here; these jobs cover the OpenMP/CPU fallbacks.
 jobs:

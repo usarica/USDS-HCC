@@ -63,7 +63,7 @@ namespace ivy_hash_impl{
       result_type res = 0;
       {
         argument_type vv = v;
-        for (result_type i=0; *vv; ++i){ res ^= (__STATIC_CAST__(result_type, __STATIC_CAST__(unsigned char, *vv))<<(((i%size_partition)*nbits_arg_el)%nbits_partition)); ++vv; }
+        for (result_type i=0; *vv; ++i){ result_type const shift = ((i%size_partition)*nbits_arg_el)%nbits_partition; res ^= (__STATIC_CAST__(result_type, __STATIC_CAST__(unsigned char, *vv))<<shift); ++vv; }
       }
       return res;
     }
@@ -83,7 +83,7 @@ namespace ivy_hash_impl{
       result_type res = 0;
       {
         argument_type vv = v;
-        for (result_type i=0; *vv; ++i){ res ^= (__STATIC_CAST__(result_type, __STATIC_CAST__(unsigned char, *vv))<<(((i%size_partition)*nbits_arg_el)%nbits_partition)); ++vv; }
+        for (result_type i=0; *vv; ++i){ result_type const shift = ((i%size_partition)*nbits_arg_el)%nbits_partition; res ^= (__STATIC_CAST__(result_type, __STATIC_CAST__(unsigned char, *vv))<<shift); ++vv; }
       }
       return res;
     }
