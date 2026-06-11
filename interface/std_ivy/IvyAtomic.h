@@ -11,8 +11,11 @@
 #include "cuda_runtime.h"
 #include <cuda/atomic>
 
+// Map std_atomic onto cuda::std so the alias exposes the full standard atomic surface
+// (atomic, atomic_ref, atomic_flag, memory_order, ...). These are the system-scoped
+// heterogeneous atomics, matching the defaults of the cuda:: thread-scoped variants.
 #ifndef std_atomic
-#define std_atomic cuda
+#define std_atomic cuda::std
 #endif
 
 #else

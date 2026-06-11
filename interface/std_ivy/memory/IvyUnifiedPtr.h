@@ -11,13 +11,12 @@
 #include "std_ivy/memory/IvyUnifiedPtr.hh"
 
 // Reference counting uses atomic_ref over the heap-allocated counter so concurrent
-// copies/destructions are race-free. IvyAtomic selects cuda::atomic_ref on the CUDA
-// build and std::atomic_ref otherwise, giving consistent host/device semantics.
+// copies/destructions are race-free. IvyAtomic exposes the std_atomic alias, which selects
+// cuda::std (CUDA) or std (host), giving consistent host/device semantics.
 #include "std_ivy/IvyAtomic.h"
-// std::atomic_flag (standard header) backs the host-only spinlock pool that serializes
+// std_atomic::atomic_flag backs the host-only spinlock pool that serializes
 // non-addressable, cross-execution-space refcount updates; it is always host code.
 // <thread> provides std::this_thread::yield() for spin-wait backoff in that pool.
-#include <atomic>
 #include <thread>
 
 
@@ -37,12 +36,12 @@ namespace std_ivy{
      * only threads that can take this path; device code addresses its own memory directly and
      * uses the hardware-atomic branch). Striping keeps independent control blocks contention-free.
      *
-     * This pool is host-only (it is compiled solely for host execution), so it uses the standard
-     * library's std::atomic_flag directly rather than the backend-selecting std_atomic alias.
+     * This pool is host-only (it is compiled solely for host execution), and it uses the
+     * backend-selecting std_atomic alias for atomic_flag so the namespace usage stays uniform.
      */
-    __INLINE_FCN_RELAXED__ ::std::atomic_flag& nonaddressable_refcount_lock(void const* key){
+    __INLINE_FCN_RELAXED__ std_atomic::atomic_flag& nonaddressable_refcount_lock(void const* key){
       static constexpr unsigned int n_locks = 64;
-      static ::std::atomic_flag locks[n_locks];
+      static std_atomic::atomic_flag locks[n_locks];
       auto const idx = (__REINTERPRET_CAST__(IvyTypes::size_t, key) / sizeof(void*)) % n_locks;
       return locks[idx];
     }
@@ -569,7 +568,7 @@ namespace std_ivy{
       // Mutate the counter atomically so concurrent copies/destructions of shared_ptr are race-free.
       // Increments may use relaxed ordering; the decrement must be acquire/release so that
       // the thread observing the transition to zero sees all prior writes before freeing.
-      // std_atomic::atomic_ref maps to cuda::atomic_ref (CUDA) or std::atomic_ref (host),
+      // std_atomic::atomic_ref maps to cuda::std::atomic_ref (CUDA) or std::atomic_ref (host),
       // so both execution spaces share the same ordering guarantees.
       std_atomic::atomic_ref<counter_type> a_ref_count(cblock_->ref_count);
       if (do_inc) return a_ref_count.fetch_add(__STATIC_CAST__(counter_type, 1), std_atomic::memory_order_relaxed);
@@ -587,8 +586,8 @@ namespace std_ivy{
       // can reach this branch, since device code addresses its own memory directly and takes the
       // hardware-atomic path above.
 #if DEVICE_CODE == DEVICE_CODE_HOST
-      ::std::atomic_flag& rc_lock = detail::nonaddressable_refcount_lock(cblock_);
-      while (rc_lock.test_and_set(::std::memory_order_acquire)){ ::std::this_thread::yield(); /* spin with backoff until acquired */ }
+      std_atomic::atomic_flag& rc_lock = detail::nonaddressable_refcount_lock(cblock_);
+      while (rc_lock.test_and_set(std_atomic::memory_order_acquire)){ ::std::this_thread::yield(); /* spin with backoff until acquired */ }
 #endif
       counter_type prev = this->read_meta_field(&cblock_->ref_count);
       counter_type next = prev;
@@ -596,7 +595,7 @@ namespace std_ivy{
       else --next;
       this->write_meta_field(&cblock_->ref_count, next);
 #if DEVICE_CODE == DEVICE_CODE_HOST
-      rc_lock.clear(::std::memory_order_release);
+      rc_lock.clear(std_atomic::memory_order_release);
 #endif
       return prev;
     }
