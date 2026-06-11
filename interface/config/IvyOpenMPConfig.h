@@ -15,8 +15,21 @@
 
   /** @brief Defined when host OpenMP support is available for this build. */
   #define OPENMP_ENABLED
-  /** @brief Minimum loop size before enabling OpenMP parallel loops. */
+  /**
+   * @brief Minimum 1D loop size before enabling OpenMP parallel loops.
+   * Override at build time with -DNUM_CPU_THREADS_THRESHOLD=<n>.
+   */
+  #ifndef NUM_CPU_THREADS_THRESHOLD
   #define NUM_CPU_THREADS_THRESHOLD 8
+  #endif
+  /**
+   * @brief Minimum flattened size (nx*ny, nx*ny*nz) before enabling OpenMP for
+   * multi-dimensional loops. Override at build time with
+   * -DNUM_CPU_THREADS_THRESHOLD_ND=<n>.
+   */
+  #ifndef NUM_CPU_THREADS_THRESHOLD_ND
+  #define NUM_CPU_THREADS_THRESHOLD_ND 8
+  #endif
 #endif
 
 

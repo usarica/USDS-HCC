@@ -470,34 +470,9 @@ namespace std_ivy{
         size_type const n_size = this->size();
         size_type const n_capacity = this->capacity();
 
-#if defined(OPENMP_ENABLED)
-        build_GPU_stream_reference_from_pointer(stream_, ref_stream);
-        #pragma omp parallel sections
-        {
-          #pragma omp section
-          {
-            res &= element_allocator_traits::allocate(new_ptr_, n_capacity, new_mem_type, ref_stream);
-            res &= element_allocator_traits::transfer(new_ptr_, ptr_, n_size, new_mem_type, current_mem_type, ref_stream);
-          }
-          #pragma omp section
-          {
-            res &= size_allocator_traits::build(new_size_, 1, misc_mem_type, ref_stream, n_size);
-          }
-          #pragma omp section
-          {
-            res &= size_allocator_traits::build(new_capacity_, 1, misc_mem_type, ref_stream, n_capacity);
-          }
-          #pragma omp section
-          {
-            res &= counter_allocator_traits::build(new_ref_count_, 1, misc_mem_type, ref_stream, 1);
-          }
-          #pragma omp section
-          {
-            res &= mem_type_allocator_traits::build(new_mem_type_, 1, misc_mem_type, ref_stream, new_mem_type);
-          }
-        }
-        destroy_GPU_stream_reference_from_pointer(stream_);
-#else
+        // The per-field metadata allocations below are a handful of one-element ops.
+        // Running them serially is faster than spawning OpenMP sections and avoids the
+        // associated leak/race surface; OpenMP is reserved for element-array loops.
         operate_with_GPU_stream_from_pointer(
           stream_, ref_stream,
           __ENCAPSULATE__(
@@ -509,7 +484,6 @@ namespace std_ivy{
             res &= mem_type_allocator_traits::build(new_mem_type_, 1, misc_mem_type, ref_stream, new_mem_type);
           )
         );
-#endif
 
         // The following line is correct.
         // We should never release when a copy is being made.
@@ -540,34 +514,8 @@ namespace std_ivy{
     bool res = true;
     if (ptr && n>0){
       if (stream) stream_ = stream;
-#if defined(OPENMP_ENABLED)
-      build_GPU_stream_reference_from_pointer(stream_, ref_stream);
-      #pragma omp parallel sections
-      {
-        #pragma omp section
-        {
-          res &= element_allocator_traits::allocate(ptr_, n, mem_type, ref_stream);
-          res &= element_allocator_traits::transfer(ptr_, ptr, n, mem_type, mem_type, ref_stream);
-        }
-        #pragma omp section
-        {
-          res &= size_allocator_traits::build(size_, 1, exec_mem_type_, ref_stream, n);
-        }
-        #pragma omp section
-        {
-          res &= size_allocator_traits::build(capacity_, 1, exec_mem_type_, ref_stream, n);
-        }
-        #pragma omp section
-        {
-          res &= counter_allocator_traits::build(ref_count_, 1, exec_mem_type_, ref_stream, __STATIC_CAST__(counter_type, 1));
-        }
-        #pragma omp section
-        {
-          res &= mem_type_allocator_traits::build(mem_type_, 1, exec_mem_type_, ref_stream, mem_type);
-        }
-      }
-      destroy_GPU_stream_reference_from_pointer(stream_);
-#else
+      // Serial: the metadata builds are trivial one-element ops; serial avoids the
+      // OpenMP-sections leak/race surface and is faster for this little work.
       operate_with_GPU_stream_from_pointer(
         stream_, ref_stream,
         __ENCAPSULATE__(
@@ -579,7 +527,6 @@ namespace std_ivy{
           res &= mem_type_allocator_traits::build(mem_type_, 1, exec_mem_type_, ref_stream, mem_type);
         )
       );
-#endif
     }
     return res;
   }
@@ -601,39 +548,6 @@ namespace std_ivy{
       __PRINT_ERROR__("IvyUnifiedPtr::swap() failed: Incompatible types\n");
       assert(false);
     }
-#if defined(OPENMP_ENABLED)
-    #pragma omp parallel sections
-    {
-      #pragma omp section
-      {
-        std_util::swap(size_, other.size_ptr());
-      }
-      #pragma omp section
-      {
-        std_util::swap(capacity_, other.capacity_ptr());
-      }
-      #pragma omp section
-      {
-        std_util::swap(exec_mem_type_, other.get_exec_memory_type());
-      }
-      #pragma omp section
-      {
-        std_util::swap(progenitor_mem_type_, other.get_progenitor_memory_type());
-      }
-      #pragma omp section
-      {
-        std_util::swap(mem_type_, other.get_memory_type_ptr());
-      }
-      #pragma omp section
-      {
-        std_util::swap(ref_count_, other.counter());
-      }
-      #pragma omp section
-      {
-        std_util::swap(stream_, other.gpu_stream());
-      }
-    }
-#else
     std_util::swap(size_, other.size_ptr());
     std_util::swap(capacity_, other.capacity_ptr());
     std_util::swap(exec_mem_type_, other.get_exec_memory_type());
@@ -641,7 +555,6 @@ namespace std_ivy{
     std_util::swap(mem_type_, other.get_memory_type_ptr());
     std_util::swap(ref_count_, other.counter());
     std_util::swap(stream_, other.gpu_stream());
-#endif
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::swap(IvyUnifiedPtr<T, IPT>& other) __NOEXCEPT__{
     if (
@@ -652,43 +565,6 @@ namespace std_ivy{
       __PRINT_ERROR__("IvyUnifiedPtr::swap() failed: No write access to swap pointers.\n");
       assert(false);
     }
-#if defined(OPENMP_ENABLED)
-    #pragma omp parallel sections
-    {
-      #pragma omp section
-      {
-        std_util::swap(ptr_, other.get());
-      }
-      #pragma omp section
-      {
-        std_util::swap(size_, other.size_ptr());
-      }
-      #pragma omp section
-      {
-        std_util::swap(capacity_, other.capacity_ptr());
-      }
-      #pragma omp section
-      {
-        std_util::swap(exec_mem_type_, other.get_exec_memory_type());
-      }
-      #pragma omp section
-      {
-        std_util::swap(progenitor_mem_type_, other.get_progenitor_memory_type());
-      }
-      #pragma omp section
-      {
-        std_util::swap(mem_type_, other.get_memory_type_ptr());
-      }
-      #pragma omp section
-      {
-        std_util::swap(ref_count_, other.counter());
-      }
-      #pragma omp section
-      {
-        std_util::swap(stream_, other.gpu_stream());
-      }
-    }
-#else
     std_util::swap(ptr_, other.get());
     std_util::swap(size_, other.size_ptr());
     std_util::swap(capacity_, other.capacity_ptr());
@@ -697,7 +573,6 @@ namespace std_ivy{
     std_util::swap(mem_type_, other.get_memory_type_ptr());
     std_util::swap(ref_count_, other.counter());
     std_util::swap(stream_, other.gpu_stream());
-#endif
   }
 
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::counter_type IvyUnifiedPtr<T, IPT>::use_count() const{
