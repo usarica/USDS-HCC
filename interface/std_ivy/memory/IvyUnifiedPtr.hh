@@ -99,8 +99,8 @@ namespace std_ivy{
     /** @brief Reset this instance to an empty, detached state. */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ void dump();
 
-    /** @brief Increment or decrement reference count. */
-    __HOST_DEVICE__ void inc_dec_counter(bool do_inc);
+    /** @brief Atomically increment or decrement reference count; returns the previous value. */
+    __HOST_DEVICE__ counter_type inc_dec_counter(bool do_inc);
     /** @brief Increment or decrement tracked size. */
     __HOST_DEVICE__ void inc_dec_size(bool do_inc);
     /** @brief Increment or decrement tracked capacity. */

@@ -10,6 +10,12 @@
 #include "std_ivy/IvyCstdio.h"
 #include "std_ivy/memory/IvyUnifiedPtr.hh"
 
+// std::atomic_ref is used for lock-free reference counting on the host execution path.
+// On the CUDA device path, native atomic intrinsics are used instead (see inc_dec_counter).
+#if (DEVICE_CODE == DEVICE_CODE_HOST)
+#include <atomic>
+#endif
+
 
 namespace std_ivy{
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(IvyGPUStream* stream) :
@@ -239,9 +245,12 @@ namespace std_ivy{
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::release(){
     if (ref_count_){
-      auto const current_count = this->use_count();
-      if (current_count==1){
-        // If we are the only owner, we must have the right write access before we can clean up.
+      // Atomically decrement first. The thread that observes the transition to zero
+      // (i.e. sees a previous value of 1) is the sole owner responsible for cleanup.
+      // This avoids the check-then-act race of reading use_count() and then freeing.
+      auto const prev_count = this->inc_dec_counter(false);
+      if (prev_count==1){
+        // We were the only owner, so we can clean up. We must have write access first.
         if (this->check_write_access()){
           auto const current_mem_type = this->get_memory_type();
           operate_with_GPU_stream_from_pointer(
@@ -263,7 +272,6 @@ namespace std_ivy{
           assert(false);
         }
       }
-      else if (current_count>0) this->inc_dec_counter(false);
     }
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::dump(){
@@ -695,7 +703,13 @@ namespace std_ivy{
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::counter_type IvyUnifiedPtr<T, IPT>::use_count() const{
     if (!ref_count_) return 0;
     constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-    if (exec_mem_type_ == def_mem_type) return *ref_count_;
+    if (exec_mem_type_ == def_mem_type){
+#if (DEVICE_CODE == DEVICE_CODE_HOST)
+      return std::atomic_ref<counter_type>(*ref_count_).load(std::memory_order_acquire);
+#else
+      return *ref_count_;
+#endif
+    }
     else{
       counter_type* p_ref_count_ = nullptr;
       {
@@ -719,29 +733,44 @@ namespace std_ivy{
       return ret;
     }
   }
-  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::inc_dec_counter(bool do_inc){
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::counter_type IvyUnifiedPtr<T, IPT>::inc_dec_counter(bool do_inc){
     if (!ref_count_){
       __PRINT_ERROR__("IvyUnifiedPtr::inc_dec_counter() failed: ref_count_ is null.\n");
       assert(false);
     }
     constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
     if (exec_mem_type_ == def_mem_type){
-      if (do_inc) ++(*ref_count_);
-      else --(*ref_count_);
+      // The counter lives in directly-addressable memory of the current execution space.
+      // Mutate it atomically so concurrent copies/destructions of shared_ptr are race-free.
+      // Increments may use relaxed ordering; the decrement must be acquire/release so that
+      // the thread observing the transition to zero sees all prior writes before freeing.
+#if (DEVICE_CODE == DEVICE_CODE_HOST)
+      std::atomic_ref<counter_type> a_ref_count(*ref_count_);
+      if (do_inc) return a_ref_count.fetch_add(__STATIC_CAST__(counter_type, 1), std::memory_order_relaxed);
+      else return a_ref_count.fetch_sub(__STATIC_CAST__(counter_type, 1), std::memory_order_acq_rel);
+#else
+      // CUDA device path: atomicAdd returns the old value. Subtraction is performed by adding
+      // the two's-complement of 1 (wrap-around), which still yields the previous value.
+      if (do_inc) return atomicAdd(ref_count_, __STATIC_CAST__(counter_type, 1));
+      else return atomicAdd(ref_count_, __STATIC_CAST__(counter_type, -1));
+#endif
     }
     else{
+      counter_type prev = 0;
       counter_type* p_ref_count_ = nullptr;
       operate_with_GPU_stream_from_pointer(
         stream_, ref_stream,
         __ENCAPSULATE__(
           p_ref_count_ = counter_allocator_traits::allocate(1, def_mem_type, ref_stream);
           counter_allocator_traits::transfer(p_ref_count_, ref_count_, 1, def_mem_type, exec_mem_type_, ref_stream);
+          prev = *p_ref_count_;
           if (do_inc) ++(*p_ref_count_);
           else --(*p_ref_count_);
           counter_allocator_traits::transfer(ref_count_, p_ref_count_, 1, exec_mem_type_, def_mem_type, ref_stream);
           counter_allocator_traits::deallocate(p_ref_count_, 1, def_mem_type, ref_stream);
         )
       );
+      return prev;
     }
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::inc_dec_size(bool do_inc){
