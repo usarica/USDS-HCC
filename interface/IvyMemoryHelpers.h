@@ -486,6 +486,10 @@ namespace IvyMemoryHelpers{
 #endif
     {
       data = (T*) malloc(n*sizeof(T));
+      if (!data){
+        __PRINT_ERROR__("allocate_memory_fcnal::allocate_memory: malloc failed for n = %llu, type size = %llu.\n", __STATIC_CAST__(unsigned long long, n), __STATIC_CAST__(unsigned long long, sizeof(T)));
+        return false;
+      }
 #ifdef __DEBUG_MEMORY__
       __PRINT_DEBUG__("allocate_memory_fcnal::allocate_memory: Method = malloc, ptr = %p, n = %llu, mem_type = %s, type = %s\n", data, n, name_mem_type, name_T);
 #endif

@@ -50,10 +50,10 @@ public:
   using RawEvent_t = IvyStreamUtils::StreamEvent_t<RawStream_t>;
 
 protected:
-  bool is_owned_;
-  unsigned int flags_;
-  int priority_;
-  RawStream_t stream_;
+  bool is_owned_ = false;
+  unsigned int flags_ = 0;
+  int priority_ = 0;
+  RawStream_t stream_{};
 
 public:
   /** @brief Default constructor. */

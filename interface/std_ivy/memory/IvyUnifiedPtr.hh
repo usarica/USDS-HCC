@@ -27,6 +27,26 @@ namespace std_ivy{
     unique
   };
 
+  /**
+   * @brief Coalesced control block holding all IvyUnifiedPtr metadata in a single allocation.
+   *
+   * Storing the reference count, size, capacity, and memory-domain descriptor contiguously
+   * lets every "fetch metadata" operation move one object instead of four scattered ones,
+   * shrinks the owner's footprint, and improves cache locality on the default-memory path.
+   * The type is intentionally independent of the element type so that copies/moves between
+   * compatible IvyUnifiedPtr specializations (different element types) share the same block.
+   */
+  struct IvyUnifiedPtrControlBlock{
+    /** @brief Shared reference count. */
+    IvyTypes::size_t ref_count;
+    /** @brief Current logical element count. */
+    IvyTypes::size_t size;
+    /** @brief Current allocated capacity. */
+    IvyTypes::size_t capacity;
+    /** @brief Memory domain of the managed storage. */
+    IvyMemoryType mem_type;
+  };
+
   /** @brief Forward declaration of the unified smart pointer template. */
   template<typename T, IvyPointerType IPT> class IvyUnifiedPtr;
   /** @brief Transfer-memory primitive specialization for IvyUnifiedPtr types. */
@@ -68,6 +88,13 @@ namespace std_ivy{
     /** @brief Traits for @ref mem_type_allocator_type. */
     typedef std_ivy::allocator_traits<mem_type_allocator_type> mem_type_allocator_traits;
 
+    /** @brief Coalesced metadata control-block type (element-type independent). */
+    typedef IvyUnifiedPtrControlBlock control_block_type;
+    /** @brief Allocator for the control block. */
+    typedef std_ivy::allocator<control_block_type> control_block_allocator_type;
+    /** @brief Traits for @ref control_block_allocator_type. */
+    typedef std_ivy::allocator_traits<control_block_allocator_type> control_block_allocator_traits;
+
     /** @brief Rebind to a different element type while preserving ownership policy. */
     template<typename U> using rebind = IvyUnifiedPtr<U, IPT>;
 
@@ -77,20 +104,25 @@ namespace std_ivy{
   protected:
     /** @brief Raw managed pointer. */
     pointer ptr_;
-    /** @brief Pointer to the managed memory-domain descriptor. */
-    IvyMemoryType* mem_type_;
-    /** @brief Pointer to current logical element count. */
-    size_type* size_;
-    /** @brief Pointer to current allocated capacity. */
-    size_type* capacity_;
-    /** @brief Pointer to shared reference count. */
-    counter_type* ref_count_;
+    /** @brief Single coalesced control block holding ref count, size, capacity, and memory type. */
+    control_block_type* cblock_;
     /** @brief Optional stream used for asynchronous memory operations. */
     IvyGPUStream* stream_;
     /** @brief Execution-context default memory domain. */
     IvyMemoryType exec_mem_type_;
     /** @brief Memory domain from which write access is considered valid. */
     IvyMemoryType progenitor_mem_type_;
+
+    /** @brief Whether the control block lives in memory directly addressable from the current execution space. */
+    __INLINE_FCN_RELAXED__ __HOST_DEVICE__ bool control_block_is_addressable() const;
+    /** @brief Read a single trivially-copyable metadata field, using a stack temporary (no heap) and skipping the copy when directly addressable. */
+    template<typename U> __HOST_DEVICE__ U read_meta_field(U* p_field) const;
+    /** @brief Write a single trivially-copyable metadata field, using a stack temporary (no heap) and skipping the copy when directly addressable. */
+    template<typename U> __HOST_DEVICE__ void write_meta_field(U* p_field, U const& val);
+    /** @brief Snapshot the entire control block in one transfer into a stack copy (batched accessor). */
+    __HOST_DEVICE__ control_block_type load_control_block() const;
+    /** @brief Write the entire control block in one transfer from a stack copy (batched accessor). */
+    __HOST_DEVICE__ void store_control_block(control_block_type const& cb);
 
     /** @brief Initialize metadata members for an already assigned pointer. */
     __HOST_DEVICE__ void init_members(IvyMemoryType mem_type, size_type n_size, size_type n_capacity);
@@ -99,8 +131,8 @@ namespace std_ivy{
     /** @brief Reset this instance to an empty, detached state. */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ void dump();
 
-    /** @brief Increment or decrement reference count. */
-    __HOST_DEVICE__ void inc_dec_counter(bool do_inc);
+    /** @brief Atomically increment or decrement reference count; returns the previous value. */
+    __HOST_DEVICE__ counter_type inc_dec_counter(bool do_inc);
     /** @brief Increment or decrement tracked size. */
     __HOST_DEVICE__ void inc_dec_size(bool do_inc);
     /** @brief Increment or decrement tracked capacity. */
@@ -171,16 +203,18 @@ namespace std_ivy{
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyMemoryType const& get_progenitor_memory_type() const __NOEXCEPT__;
     /** @brief Get execution memory type (const). */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyMemoryType const& get_exec_memory_type() const __NOEXCEPT__;
-    /** @brief Get pointer to memory-type metadata (const). */
+    /** @brief Get pointer to memory-type metadata (const, points into the control block). */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyMemoryType* get_memory_type_ptr() const __NOEXCEPT__;
     /** @brief Get associated stream pointer (const). */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyGPUStream* gpu_stream() const __NOEXCEPT__;
-    /** @brief Get pointer to size metadata (const). */
+    /** @brief Get pointer to size metadata (const, points into the control block). */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ size_type* size_ptr() const __NOEXCEPT__;
-    /** @brief Get pointer to capacity metadata (const). */
+    /** @brief Get pointer to capacity metadata (const, points into the control block). */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ size_type* capacity_ptr() const __NOEXCEPT__;
-    /** @brief Get pointer to reference counter (const). */
+    /** @brief Get pointer to reference counter (const, points into the control block). */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ counter_type* counter() const __NOEXCEPT__;
+    /** @brief Get the control block pointer (const). */
+    __INLINE_FCN_RELAXED__ __HOST_DEVICE__ control_block_type* control_block() const __NOEXCEPT__;
     /** @brief Get raw managed pointer (const). */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ pointer get() const __NOEXCEPT__;
 
@@ -188,16 +222,10 @@ namespace std_ivy{
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyMemoryType& get_progenitor_memory_type() __NOEXCEPT__;
     /** @brief Get execution memory type (mutable). */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyMemoryType& get_exec_memory_type() __NOEXCEPT__;
-    /** @brief Get pointer to memory-type metadata (mutable). */
-    __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyMemoryType*& get_memory_type_ptr() __NOEXCEPT__;
     /** @brief Get associated stream pointer (mutable). */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyGPUStream*& gpu_stream() __NOEXCEPT__;
-    /** @brief Get pointer to size metadata (mutable). */
-    __INLINE_FCN_RELAXED__ __HOST_DEVICE__ size_type*& size_ptr() __NOEXCEPT__;
-    /** @brief Get pointer to capacity metadata (mutable). */
-    __INLINE_FCN_RELAXED__ __HOST_DEVICE__ size_type*& capacity_ptr() __NOEXCEPT__;
-    /** @brief Get pointer to reference counter (mutable). */
-    __INLINE_FCN_RELAXED__ __HOST_DEVICE__ counter_type*& counter() __NOEXCEPT__;
+    /** @brief Get the control block pointer (mutable). */
+    __INLINE_FCN_RELAXED__ __HOST_DEVICE__ control_block_type*& control_block() __NOEXCEPT__;
     /** @brief Get raw managed pointer (mutable). */
     __INLINE_FCN_RELAXED__ __HOST_DEVICE__ pointer& get() __NOEXCEPT__;
 

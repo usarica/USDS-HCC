@@ -266,7 +266,7 @@ template<typename Kernel_t> struct run_kernel<Kernel_t, true> : run_kernel_base{
       }
 #if defined(OPENMP_ENABLED)
       IvyTypes::size_t nxy = nx*ny;
-      if (nxy>=8){
+      if (nxy>=NUM_CPU_THREADS_THRESHOLD_ND){
         #pragma omp parallel for collapse(2) schedule(static)
         _KERNEL_UNIT_CMD
       }
@@ -305,7 +305,7 @@ template<typename Kernel_t> struct run_kernel<Kernel_t, true> : run_kernel_base{
       }
 #if defined(OPENMP_ENABLED)
       IvyTypes::size_t nxyz = nx*ny*nz;
-      if (nxyz>=8){
+      if (nxyz>=NUM_CPU_THREADS_THRESHOLD_ND){
         #pragma omp parallel for collapse(3) schedule(static)
         _KERNEL_UNIT_CMD
       }
@@ -369,7 +369,7 @@ template<typename Kernel_t> struct run_kernel : run_kernel_base{
     }
 #if defined(OPENMP_ENABLED)
     IvyTypes::size_t nxy = nx*ny;
-    if (nxy>=8){
+    if (nxy>=NUM_CPU_THREADS_THRESHOLD_ND){
       #pragma omp parallel for collapse(2) schedule(static)
       _KERNEL_CMD
     }
@@ -400,7 +400,7 @@ template<typename Kernel_t> struct run_kernel : run_kernel_base{
     }
 #if defined(OPENMP_ENABLED)
     IvyTypes::size_t nxyz = nx*ny*nz;
-    if (nxyz>=8){
+    if (nxyz>=NUM_CPU_THREADS_THRESHOLD_ND){
       #pragma omp parallel for collapse(3) schedule(static)
       _KERNEL_CMD
     }

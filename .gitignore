@@ -32,3 +32,4 @@ test/*.txt
 obj
 lib
 *executables
+*executables_san
