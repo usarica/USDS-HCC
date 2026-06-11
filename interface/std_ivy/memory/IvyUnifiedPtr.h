@@ -14,9 +14,39 @@
 // copies/destructions are race-free. IvyAtomic selects cuda::atomic_ref on the CUDA
 // build and std::atomic_ref otherwise, giving consistent host/device semantics.
 #include "std_ivy/IvyAtomic.h"
+// std::atomic_flag (standard header) backs the host-only spinlock pool that serializes
+// non-addressable, cross-execution-space refcount updates; it is always host code.
+#include <atomic>
 
 
 namespace std_ivy{
+#if DEVICE_CODE == DEVICE_CODE_HOST
+  namespace detail{
+    /**
+     * @brief Host-side striped spinlock pool guarding non-addressable refcount updates.
+     *
+     * When a control block lives in memory that is not directly addressable from the host
+     * (e.g. device memory reached from a host thread), the counter cannot be mutated with a
+     * single hardware atomic: it must be staged in through a transfer, modified, and written
+     * back. That read-modify-write is not atomic on its own, so concurrent host-thread
+     * ownership updates could lose increments/decrements. We serialize those sequences here
+     * with a small pool of spinlocks keyed by the control-block address, which makes the
+     * cross-execution-space refcount update atomic with respect to other host threads (the
+     * only threads that can take this path; device code addresses its own memory directly and
+     * uses the hardware-atomic branch). Striping keeps independent control blocks contention-free.
+     *
+     * This pool is host-only (it is compiled solely for host execution), so it uses the standard
+     * library's std::atomic_flag directly rather than the backend-selecting std_atomic alias.
+     */
+    __INLINE_FCN_RELAXED__ ::std::atomic_flag& nonaddressable_refcount_lock(void const* key){
+      static constexpr unsigned int n_locks = 64;
+      static ::std::atomic_flag locks[n_locks];
+      auto const idx = (__REINTERPRET_CAST__(IvyTypes::size_t, key) / sizeof(void*)) % n_locks;
+      return locks[idx];
+    }
+  }
+#endif
+
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(IvyGPUStream* stream) :
     ptr_(nullptr),
     cblock_(nullptr),
@@ -548,17 +578,24 @@ namespace std_ivy{
       // cannot be mutated in place, so read just the ref_count field into an on-stack temporary,
       // modify it, and write it back. Touching only this field avoids clobbering concurrent
       // updates to the other control-block fields.
-      // NOTE: unlike the addressable branch, this read-modify-write is NOT atomic. This matches
-      // the pre-existing behavior of this class: a host-side atomic operation cannot be performed
-      // on memory that is not directly addressable from the host (it must be staged through a
-      // transfer). Reference-count updates across an execution-space boundary therefore require
-      // external synchronization by the caller; the addressable path (host/unified memory, which
-      // the threaded tests exercise) remains fully atomic.
+      // A host-side hardware atomic cannot operate on memory that is not directly addressable
+      // from the host (the counter must be staged through a transfer), so we instead serialize
+      // the staged read-modify-write with a host-side spinlock keyed by the control-block
+      // address. This makes concurrent host-thread ownership updates race-free; only host threads
+      // can reach this branch, since device code addresses its own memory directly and takes the
+      // hardware-atomic path above.
+#if DEVICE_CODE == DEVICE_CODE_HOST
+      ::std::atomic_flag& rc_lock = detail::nonaddressable_refcount_lock(cblock_);
+      while (rc_lock.test_and_set(::std::memory_order_acquire)){ /* spin until acquired */ }
+#endif
       counter_type prev = this->read_meta_field(&cblock_->ref_count);
       counter_type next = prev;
       if (do_inc) ++next;
       else --next;
       this->write_meta_field(&cblock_->ref_count, next);
+#if DEVICE_CODE == DEVICE_CODE_HOST
+      rc_lock.clear(::std::memory_order_release);
+#endif
       return prev;
     }
   }

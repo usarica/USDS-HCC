@@ -69,34 +69,31 @@ namespace IvyMath{
 
       __HOST_DEVICE__ data_container const& get_clients() const{ return clients_; }
 
-      __HOST_DEVICE__ data_container* clone_clients_and_release(){
-        data_container* tgt_bkp = nullptr;
+      /*
+      detach_aliased_clients: Re-initialize this object's client container after a shallow
+      (bitwise) copy so that it is an independently owned, empty container.
+
+      A shallow transfer (memcpy) of an IvyClientManager leaves clients_ bitwise-aliasing the
+      source's container buffer. Deep-copying that container would (a) recurse through the client
+      back-references, re-entering the owning node and forming a copy cycle, and (b) make the copy
+      and the source share/free the same buffer. Re-initializing the copy's clients_ as empty here
+      breaks the cycle and gives the copy its own container. The aliased buffer is abandoned rather
+      than freed because it is owned by the source.
+
+      This operates exclusively on the freshly-copied target; the source is never mutated, so the
+      operation is safe to run concurrently (e.g. from OpenMP-parallelized element transfers) even
+      when many targets are copied from the same shared source object.
+      */
+      __HOST_DEVICE__ void detach_aliased_clients(){
         data_container* ptr_clients_ = std_mem::addressof(clients_);
         constexpr auto def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
         auto stream = clients_.gpu_stream();
         operate_with_GPU_stream_from_pointer(
           stream, ref_stream,
           __ENCAPSULATE__(
-            allocator_data_container::allocate(tgt_bkp, 1, def_mem_type, ref_stream);
             data_container* new_clients_ = allocator_data_container::build(1, def_mem_type, ref_stream);
-            IvyMemoryHelpers::transfer_memory(tgt_bkp, ptr_clients_, 1, def_mem_type, def_mem_type, ref_stream);
             IvyMemoryHelpers::transfer_memory(ptr_clients_, new_clients_, 1, def_mem_type, def_mem_type, ref_stream);
             allocator_data_container::deallocate(new_clients_, 1, def_mem_type, ref_stream);
-          )
-        );
-        return tgt_bkp;
-      }
-
-      __HOST_DEVICE__ void restore_clients_and_reabsorb(data_container*& clients_bkp){
-        if (!clients_bkp) return;
-        data_container* ptr_clients_ = std_mem::addressof(clients_);
-        constexpr auto def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-        auto stream = clients_.gpu_stream();
-        operate_with_GPU_stream_from_pointer(
-          stream, ref_stream,
-          __ENCAPSULATE__(
-            IvyMemoryHelpers::transfer_memory(ptr_clients_, clients_bkp, 1, def_mem_type, def_mem_type, ref_stream);
-            allocator_data_container::deallocate(clients_bkp, 1, def_mem_type, ref_stream);
           )
         );
       }
@@ -168,11 +165,16 @@ namespace std_ivy{
       */
       constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
       constexpr bool release_old = false; // We do not release existing memory from internal memory transfers in order to preserve src pointer.
-      auto clients_src = src->clone_clients_and_release();
+      // The deep copy must not follow the client back-references (which would re-enter the owning
+      // node and form a copy cycle) and must not let the copy share/free the source's client buffer.
+      // We therefore detach the aliased client container on the freshly-copied target, leaving the
+      // source untouched. Because the source is only read, this path is safe under concurrent
+      // (OpenMP) element transfers, even when several targets are copied from the same shared source.
 #if defined(__USE_CUDA__)
       if (def_mem_type==type_tgt && def_mem_type==type_src){
 #endif
         res &= IvyMemoryHelpers::transfer_memory(tgt, src, n, type_tgt, type_src, stream);
+        for (size_type i=0; i<n; ++i) (tgt+i)->detach_aliased_clients();
         res &= transfer_internal_memory(tgt, n, type_tgt, type_tgt, stream, release_old);
 #if defined(__USE_CUDA__)
       }
@@ -180,12 +182,12 @@ namespace std_ivy{
         pointer p_int = nullptr;
         res &= IvyMemoryHelpers::allocate_memory(p_int, n, def_mem_type, stream);
         res &= IvyMemoryHelpers::transfer_memory(p_int, src, n, def_mem_type, type_src, stream);
+        for (size_type i=0; i<n; ++i) (p_int+i)->detach_aliased_clients();
         res &= transfer_internal_memory(p_int, n, def_mem_type, type_tgt, stream, release_old);
         res &= IvyMemoryHelpers::transfer_memory(tgt, p_int, n, type_tgt, def_mem_type, stream);
         res &= IvyMemoryHelpers::free_memory(p_int, n, def_mem_type, stream);
       }
 #endif
-      src->restore_clients_and_reabsorb(clients_src);
       return res;
     }
   };
