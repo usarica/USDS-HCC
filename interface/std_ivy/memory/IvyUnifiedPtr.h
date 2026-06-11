@@ -334,12 +334,17 @@ namespace std_ivy{
     if (!cblock_) return cb;
     if (this->control_block_is_addressable()) return *cblock_;
     control_block_type* p_cb = &cb;
+    bool transfer_success = false;
     operate_with_GPU_stream_from_pointer(
       stream_, ref_stream,
       __ENCAPSULATE__(
-        control_block_allocator_traits::transfer(p_cb, cblock_, 1, def_mem_type, exec_mem_type_, ref_stream);
+        transfer_success = control_block_allocator_traits::transfer(p_cb, cblock_, 1, def_mem_type, exec_mem_type_, ref_stream);
       )
     );
+    if (!transfer_success){
+      __PRINT_ERROR__("IvyUnifiedPtr::load_control_block: Failed to transfer the control block at %p.\n", cblock_);
+      assert(false);
+    }
     return cb;
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::store_control_block(control_block_type const& cb){
@@ -348,12 +353,17 @@ namespace std_ivy{
     if (this->control_block_is_addressable()){ *cblock_ = cb; return; }
     control_block_type tmp = cb;
     control_block_type* p_tmp = &tmp;
+    bool transfer_success = false;
     operate_with_GPU_stream_from_pointer(
       stream_, ref_stream,
       __ENCAPSULATE__(
-        control_block_allocator_traits::transfer(cblock_, p_tmp, 1, exec_mem_type_, def_mem_type, ref_stream);
+        transfer_success = control_block_allocator_traits::transfer(cblock_, p_tmp, 1, exec_mem_type_, def_mem_type, ref_stream);
       )
     );
+    if (!transfer_success){
+      __PRINT_ERROR__("IvyUnifiedPtr::store_control_block: Failed to transfer the control block at %p.\n", cblock_);
+      assert(false);
+    }
   }
 
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyMemoryType const& IvyUnifiedPtr<T, IPT>::get_progenitor_memory_type() const __NOEXCEPT__{ return this->progenitor_mem_type_; }
