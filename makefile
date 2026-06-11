@@ -93,6 +93,7 @@ $(TESTEXEDIR)%:: $(TESTDIR)%.cc | testexedirs
 clean:
 	rm -rf $(EXEDIR)
 	rm -rf $(TESTEXEDIR)
+	rm -rf $(SANTESTEXEDIR)
 	rm -f $(BINDIR)*.o
 	rm -f $(BINDIR)*.so
 	rm -f $(BINDIR)*.d
@@ -118,3 +119,76 @@ clean:
 
 
 include $(DEPS)
+
+# ---------------------------------------------------------------------------
+# Sanitizer and Valgrind test targets (host/g++ only; not for USE_CUDA builds)
+#
+#   make utests-asan      Build+run all unit tests with AddressSanitizer+UBSan
+#   make utests-tsan      Build+run all unit tests with ThreadSanitizer
+#   make run-utests       Build (make utests) then run every unit test
+#   make valgrind-utests  Build (make utests) then run every test under Valgrind
+#
+# The Valgrind gate is leak- and memory-safety-focused (leaks, invalid reads/
+# writes, use-after-free); Memcheck's uninitialised-value reporting is disabled
+# (--undef-value-errors=no) to avoid failing on a pre-existing, unrelated
+# benchmark issue (copy_data leaving the int target unpopulated in CPU mode).
+# ---------------------------------------------------------------------------
+SANTESTEXEDIR = $(COMPILEPATH)test_executables_san/
+ASAN_FLAGS    = -fsanitize=address,undefined -fno-omit-frame-pointer
+TSAN_FLAGS    = -fsanitize=thread -fno-omit-frame-pointer
+
+# The autodiff unit test is out of scope for the memory/thread sanitizer gates:
+# it has pre-existing leaks under ASan that are unrelated to core STL/memory code.
+SANTESTSCC    = $(filter-out %utest_autodiff_basic_blocks.cc, $(TESTSCC))
+VGTESTEXES    = $(filter-out %utest_autodiff_basic_blocks, $(TESTEXES))
+# ThreadSanitizer is gated on the std::thread-based regression tests only.
+# TSan cannot observe libgomp's internal synchronization, so it reports false
+# races inside OpenMP runtime code (reductions/barriers) for the OpenMP-based
+# element-loop tests; those are covered by ASan + Valgrind instead.
+TSANTESTSCC   = $(wildcard $(TESTDIR)utest_unified_ptr_threads.cc)
+
+.PHONY: utests-asan utests-tsan run-utests valgrind-utests santestexedirs
+
+santestexedirs:
+	mkdir -p $(SANTESTEXEDIR)
+
+utests-asan: santestexedirs
+	set -e; \
+	for src in $(SANTESTSCC); do \
+	  exe=$(SANTESTEXEDIR)$$(basename $$src .cc); \
+	  echo "[ASan/UBSan] Compiling $$src"; \
+	  $(CXX) $(EXEFLAGS) $(ASAN_FLAGS) -o $$exe $$src $(LIBS); \
+	done; \
+	for src in $(SANTESTSCC); do \
+	  exe=$(SANTESTEXEDIR)$$(basename $$src .cc); \
+	  echo "[ASan/UBSan] Running $$exe"; \
+	  ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 $$exe > /dev/null; \
+	done
+
+utests-tsan: santestexedirs
+	set -e; \
+	for src in $(TSANTESTSCC); do \
+	  exe=$(SANTESTEXEDIR)$$(basename $$src .cc).tsan; \
+	  echo "[TSan] Compiling $$src"; \
+	  $(CXX) $(EXEFLAGS) $(TSAN_FLAGS) -o $$exe $$src $(LIBS); \
+	done; \
+	for src in $(TSANTESTSCC); do \
+	  exe=$(SANTESTEXEDIR)$$(basename $$src .cc).tsan; \
+	  echo "[TSan] Running $$exe"; \
+	  TSAN_OPTIONS=halt_on_error=1 $$exe > /dev/null; \
+	done
+
+run-utests: utests
+	set -e; \
+	for exe in $(TESTEXES); do \
+	  echo "Running $$exe"; \
+	  $$exe > /dev/null; \
+	done
+
+valgrind-utests: utests
+	set -e; \
+	for exe in $(VGTESTEXES); do \
+	  echo "[Valgrind] Running $$exe"; \
+	  valgrind --leak-check=full --errors-for-leak-kinds=definite,indirect \
+	    --undef-value-errors=no --error-exitcode=1 $$exe > /dev/null; \
+	done

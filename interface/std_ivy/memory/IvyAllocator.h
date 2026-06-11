@@ -246,19 +246,18 @@ namespace std_ivy{
         }
       }
       else{
-        #define _CMD \
-        for (size_type i=0; i<n; ++i) res &= kernel_type::transfer_internal_memory(ptr+i, mem_type, release_old);
+        // res is accumulated with &= across iterations; under OpenMP this must use a
+        // reduction to avoid a data race on the shared accumulator (TSan-confirmed).
 #if defined(OPENMP_ENABLED)
         if (n>=NUM_CPU_THREADS_THRESHOLD){
-          #pragma omp parallel for schedule(static)
-          _CMD
+          #pragma omp parallel for schedule(static) reduction(&:res)
+          for (size_type i=0; i<n; ++i) res &= kernel_type::transfer_internal_memory(ptr+i, mem_type, release_old);
         }
         else
 #endif
         {
-          _CMD
+          for (size_type i=0; i<n; ++i) res &= kernel_type::transfer_internal_memory(ptr+i, mem_type, release_old);
         }
-        #undef _CMD
       }
       return res;
     }
