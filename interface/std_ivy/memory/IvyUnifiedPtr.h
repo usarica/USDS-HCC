@@ -16,7 +16,9 @@
 #include "std_ivy/IvyAtomic.h"
 // std::atomic_flag (standard header) backs the host-only spinlock pool that serializes
 // non-addressable, cross-execution-space refcount updates; it is always host code.
+// <thread> provides std::this_thread::yield() for spin-wait backoff in that pool.
 #include <atomic>
+#include <thread>
 
 
 namespace std_ivy{
@@ -586,7 +588,7 @@ namespace std_ivy{
       // hardware-atomic path above.
 #if DEVICE_CODE == DEVICE_CODE_HOST
       ::std::atomic_flag& rc_lock = detail::nonaddressable_refcount_lock(cblock_);
-      while (rc_lock.test_and_set(::std::memory_order_acquire)){ /* spin until acquired */ }
+      while (rc_lock.test_and_set(::std::memory_order_acquire)){ ::std::this_thread::yield(); /* spin with backoff until acquired */ }
 #endif
       counter_type prev = this->read_meta_field(&cblock_->ref_count);
       counter_type next = prev;

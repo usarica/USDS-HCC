@@ -69,7 +69,7 @@ namespace IvyMath{
 
       __HOST_DEVICE__ data_container const& get_clients() const{ return clients_; }
 
-      /*
+      /**
       detach_aliased_clients: Re-initialize this object's client container after a shallow
       (bitwise) copy so that it is an independently owned, empty container.
 
