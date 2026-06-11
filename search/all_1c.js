@@ -15,12 +15,13 @@ var searchData=
   ['unpack_5fif_5ffunction_5ftype_12',['unpack_if_function_type',['../d7/d8d/structIvyMath_1_1unpack__if__function__type.html',1,'IvyMath']]],
   ['unpacked_5freduced_5fvalue_5ftype_13',['unpacked_reduced_value_type',['../db/d64/structIvyMath_1_1unpacked__reduced__value__type.html',1,'IvyMath']]],
   ['usage_20approval_14',['License and Usage Approval',['../index.html#autotoc_md61',1,'']]],
-  ['use_15',['3. Authorized Use',['../da/d19/md_LICENSE.html#autotoc_md5',1,'']]],
-  ['use_20in_20your_20code_16',['How to Use in Your Code',['../index.html#autotoc_md41',1,'']]],
-  ['use_20tt_20std_5fivy_3a_3avector_20tt_17',['Example: use &lt;tt&gt;std_ivy::vector&lt;/tt&gt;',['../index.html#autotoc_md43',1,'']]],
-  ['use_5fcount_18',['use_count',['../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#ab886414e830e4da548f4206c7319493d',1,'std_ivy::IvyUnifiedPtr']]],
-  ['use_5fdevice_5facc_19',['use_device_acc',['../d2/d12/namespaceIvyMemoryHelpers.html#af7f504c8e6240385fdf2c47448a20965',1,'IvyMemoryHelpers']]],
-  ['use_5fdevice_5fgpu_20',['use_device_GPU',['../d2/d12/namespaceIvyMemoryHelpers.html#a325d02345e7a58363de443d83056e5df',1,'IvyMemoryHelpers']]],
-  ['use_5fdevice_5fhost_21',['use_device_host',['../d2/d12/namespaceIvyMemoryHelpers.html#a267a2ac7e1e887a5b18e5cc801825204',1,'IvyMemoryHelpers']]],
-  ['used_22',['OpenMP not being used',['../index.html#autotoc_md58',1,'']]]
+  ['usds_20hcc_15',['USDS-HCC',['../index.html',1,'']]],
+  ['use_16',['3. Authorized Use',['../da/d19/md_LICENSE.html#autotoc_md5',1,'']]],
+  ['use_20in_20your_20code_17',['How to Use in Your Code',['../index.html#autotoc_md41',1,'']]],
+  ['use_20tt_20std_5fivy_3a_3avector_20tt_18',['Example: use &lt;tt&gt;std_ivy::vector&lt;/tt&gt;',['../index.html#autotoc_md43',1,'']]],
+  ['use_5fcount_19',['use_count',['../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#ab886414e830e4da548f4206c7319493d',1,'std_ivy::IvyUnifiedPtr']]],
+  ['use_5fdevice_5facc_20',['use_device_acc',['../d2/d12/namespaceIvyMemoryHelpers.html#af7f504c8e6240385fdf2c47448a20965',1,'IvyMemoryHelpers']]],
+  ['use_5fdevice_5fgpu_21',['use_device_GPU',['../d2/d12/namespaceIvyMemoryHelpers.html#a325d02345e7a58363de443d83056e5df',1,'IvyMemoryHelpers']]],
+  ['use_5fdevice_5fhost_22',['use_device_host',['../d2/d12/namespaceIvyMemoryHelpers.html#a267a2ac7e1e887a5b18e5cc801825204',1,'IvyMemoryHelpers']]],
+  ['used_23',['OpenMP not being used',['../index.html#autotoc_md58',1,'']]]
 ];

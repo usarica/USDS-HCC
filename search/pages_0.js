@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['ivyheterogeneouscore_0',['IvyHeterogeneousCore',['../index.html',1,'']]]
+  ['hcc_0',['USDS-HCC',['../index.html',1,'']]]
 ];
