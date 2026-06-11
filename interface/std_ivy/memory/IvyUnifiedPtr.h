@@ -19,20 +19,14 @@
 namespace std_ivy{
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(IvyGPUStream* stream) :
     ptr_(nullptr),
-    mem_type_(nullptr),
-    size_(nullptr),
-    capacity_(nullptr),
-    ref_count_(nullptr),
+    cblock_(nullptr),
     stream_(stream),
     exec_mem_type_(IvyMemoryHelpers::get_execution_default_memory()),
     progenitor_mem_type_(IvyMemoryHelpers::get_execution_default_memory())
   {}
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(std_cstddef::nullptr_t, IvyGPUStream* stream) :
     ptr_(nullptr),
-    mem_type_(nullptr),
-    size_(nullptr),
-    capacity_(nullptr),
-    ref_count_(nullptr),
+    cblock_(nullptr),
     stream_(stream),
     exec_mem_type_(IvyMemoryHelpers::get_execution_default_memory()),
     progenitor_mem_type_(IvyMemoryHelpers::get_execution_default_memory())
@@ -40,6 +34,7 @@ namespace std_ivy{
   template<typename T, IvyPointerType IPT>
   __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(T* ptr, IvyMemoryType mem_type, IvyGPUStream* stream) :
     ptr_(ptr),
+    cblock_(nullptr),
     stream_(stream),
     exec_mem_type_(IvyMemoryHelpers::get_execution_default_memory()),
     progenitor_mem_type_(IvyMemoryHelpers::get_execution_default_memory())
@@ -49,6 +44,7 @@ namespace std_ivy{
   template<typename T, IvyPointerType IPT>
   __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(T* ptr, size_type n, IvyMemoryType mem_type, IvyGPUStream* stream) :
     ptr_(ptr),
+    cblock_(nullptr),
     stream_(stream),
     exec_mem_type_(IvyMemoryHelpers::get_execution_default_memory()),
     progenitor_mem_type_(IvyMemoryHelpers::get_execution_default_memory())
@@ -58,6 +54,7 @@ namespace std_ivy{
   template<typename T, IvyPointerType IPT>
   __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(T* ptr, size_type n_size, size_type n_capacity, IvyMemoryType mem_type, IvyGPUStream* stream) :
     ptr_(ptr),
+    cblock_(nullptr),
     stream_(stream),
     exec_mem_type_(IvyMemoryHelpers::get_execution_default_memory()),
     progenitor_mem_type_(IvyMemoryHelpers::get_execution_default_memory())
@@ -67,6 +64,7 @@ namespace std_ivy{
   template<typename T, IvyPointerType IPT>
   template<typename U>
   __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(U* ptr, IvyMemoryType mem_type, IvyGPUStream* stream) :
+    cblock_(nullptr),
     stream_(stream),
     exec_mem_type_(IvyMemoryHelpers::get_execution_default_memory()),
     progenitor_mem_type_(IvyMemoryHelpers::get_execution_default_memory())
@@ -77,6 +75,7 @@ namespace std_ivy{
   template<typename T, IvyPointerType IPT>
   template<typename U>
   __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(U* ptr, size_type n, IvyMemoryType mem_type, IvyGPUStream* stream) :
+    cblock_(nullptr),
     stream_(stream),
     exec_mem_type_(IvyMemoryHelpers::get_execution_default_memory()),
     progenitor_mem_type_(IvyMemoryHelpers::get_execution_default_memory())
@@ -95,13 +94,10 @@ namespace std_ivy{
       assert(false);
     }
     else{
-      mem_type_ = other.get_memory_type_ptr();
-      size_ = other.size_ptr();
-      capacity_ = other.capacity_ptr();
-      ref_count_ = other.counter();
+      cblock_ = other.control_block();
       stream_ = other.gpu_stream();
       exec_mem_type_ = other.get_exec_memory_type();
-      if (ref_count_) this->inc_dec_counter(true);
+      if (cblock_) this->inc_dec_counter(true);
     }
     // We should reset the other pointer if it is unique and its progenitor memory type is the same as that of the current context.
     if constexpr (IPU==IvyPointerType::unique){
@@ -110,15 +106,12 @@ namespace std_ivy{
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(IvyUnifiedPtr<T, IPT> const& other) :
     ptr_(other.ptr_),
-    mem_type_(other.mem_type_),
-    size_(other.size_),
-    capacity_(other.capacity_),
-    ref_count_(other.ref_count_),
+    cblock_(other.cblock_),
     stream_(other.stream_),
     exec_mem_type_(other.exec_mem_type_),
     progenitor_mem_type_(other.progenitor_mem_type_)
   {
-    if (ref_count_) this->inc_dec_counter(true);
+    if (cblock_) this->inc_dec_counter(true);
     // We should reset the other pointer if it is unique and its progenitor memory type is the same as that of the current context.
     if constexpr (IPT==IvyPointerType::unique){
       if (other.check_write_access()) __CONST_CAST__(__ENCAPSULATE__(IvyUnifiedPtr<T, IPT>&), other).reset();
@@ -127,10 +120,7 @@ namespace std_ivy{
   template<typename T, IvyPointerType IPT> template<typename U, IvyPointerType IPU, ENABLE_IF_BOOL_IMPL((IPU==IPT || IPU==IvyPointerType::unique) && (IS_BASE_OF(T, U) || IS_BASE_OF(U, T)))>
   __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(IvyUnifiedPtr<U, IPU>&& other) :
     ptr_(std_util::move(other.get())),
-    mem_type_(std_util::move(other.get_memory_type_ptr())),
-    size_(std_util::move(other.size_ptr())),
-    capacity_(std_util::move(other.capacity_ptr())),
-    ref_count_(std_util::move(other.counter())),
+    cblock_(std_util::move(other.control_block())),
     stream_(std_util::move(other.gpu_stream())),
     exec_mem_type_(std_util::move(other.get_exec_memory_type())),
     progenitor_mem_type_(std_util::move(other.get_progenitor_memory_type()))
@@ -140,10 +130,7 @@ namespace std_ivy{
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(IvyUnifiedPtr&& other) :
     ptr_(std_util::move(other.ptr_)),
-    mem_type_(std_util::move(other.mem_type_)),
-    size_(std_util::move(other.size_)),
-    capacity_(std_util::move(other.capacity_)),
-    ref_count_(std_util::move(other.ref_count_)),
+    cblock_(std_util::move(other.cblock_)),
     stream_(std_util::move(other.gpu_stream())),
     exec_mem_type_(std_util::move(other.exec_mem_type_)),
     progenitor_mem_type_(std_util::move(other.progenitor_mem_type_))
@@ -160,17 +147,14 @@ namespace std_ivy{
       this->release();
       progenitor_mem_type_ = other.get_progenitor_memory_type();
       exec_mem_type_ = other.get_exec_memory_type();
-      mem_type_ = other.get_memory_type_ptr();
       ptr_ = __DYNAMIC_CAST__(pointer, other.get());
       if (!ptr_ && other.get()){
         __PRINT_ERROR__("IvyUnifiedPtr copy assignment failed: Incompatible types\n");
         assert(false);
       }
-      size_ = other.size_ptr();
-      capacity_ = other.capacity_ptr();
-      ref_count_ = other.counter();
+      cblock_ = other.control_block();
       stream_ = other.gpu_stream();
-      if (ref_count_) this->inc_dec_counter(true);
+      if (cblock_) this->inc_dec_counter(true);
       // We should reset the other pointer if it is unique and its progenitor memory type is the same as that of the current context.
       if constexpr (IPU==IvyPointerType::unique){
         if (other.check_write_access()) __CONST_CAST__(__ENCAPSULATE__(IvyUnifiedPtr<U, IPU>&), other).reset();
@@ -183,13 +167,10 @@ namespace std_ivy{
       this->release();
       progenitor_mem_type_ = other.progenitor_mem_type_;
       exec_mem_type_ = other.exec_mem_type_;
-      mem_type_ = other.mem_type_;
       ptr_ = other.ptr_;
-      size_ = other.size_;
-      capacity_ = other.capacity_;
-      ref_count_ = other.ref_count_;
+      cblock_ = other.cblock_;
       stream_ = other.gpu_stream();
-      if (ref_count_) this->inc_dec_counter(true);
+      if (cblock_) this->inc_dec_counter(true);
       // We should reset the other pointer if it is unique and its progenitor memory type is the same as that of the current context.
       if constexpr (IPT==IvyPointerType::unique){
         if (other.check_write_access()) __CONST_CAST__(__ENCAPSULATE__(IvyUnifiedPtr<T, IPT>&), other).reset();
@@ -203,10 +184,7 @@ namespace std_ivy{
     other.check_write_access_or_die();
     this->release();
     ptr_ = std_util::move(other.get());
-    mem_type_ = std_util::move(other.get_memory_type_ptr());
-    size_ = std_util::move(other.size_ptr());
-    capacity_ = std_util::move(other.capacity_ptr());
-    ref_count_ = std_util::move(other.counter());
+    cblock_ = std_util::move(other.control_block());
     stream_ = std_util::move(other.gpu_stream());
     exec_mem_type_ = std_util::move(other.get_exec_memory_type());
     progenitor_mem_type_ = std_util::move(other.get_progenitor_memory_type());
@@ -217,10 +195,7 @@ namespace std_ivy{
     other.check_write_access_or_die();
     this->release();
     ptr_ = std_util::move(other.ptr_);
-    mem_type_ = std_util::move(other.mem_type_);
-    size_ = std_util::move(other.size_);
-    capacity_ = std_util::move(other.capacity_);
-    ref_count_ = std_util::move(other.ref_count_);
+    cblock_ = std_util::move(other.cblock_);
     stream_ = std_util::move(other.stream_);
     exec_mem_type_ = std_util::move(other.exec_mem_type_);
     progenitor_mem_type_ = std_util::move(other.progenitor_mem_type_);
@@ -235,15 +210,14 @@ namespace std_ivy{
     operate_with_GPU_stream_from_pointer(
       stream_, ref_stream,
       __ENCAPSULATE__(
-        size_ = size_allocator_traits::build(1, exec_mem_type_, ref_stream, n_size);
-        capacity_ = size_allocator_traits::build(1, exec_mem_type_, ref_stream, n_capacity);
-        ref_count_ = counter_allocator_traits::build(1, exec_mem_type_, ref_stream, __STATIC_CAST__(counter_type, 1));
-        mem_type_ = mem_type_allocator_traits::build(1, exec_mem_type_, ref_stream, mem_type);
+        cblock_ = control_block_allocator_traits::allocate(1, exec_mem_type_, ref_stream);
       )
     );
+    control_block_type cb{ __STATIC_CAST__(counter_type, 1), n_size, n_capacity, mem_type };
+    this->store_control_block(cb);
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::release(){
-    if (ref_count_){
+    if (cblock_){
       // Atomically decrement first. The thread that observes the transition to zero
       // (i.e. sees a previous value of 1) is the sole owner responsible for cleanup.
       // This avoids the check-then-act race of reading use_count() and then freeing.
@@ -251,18 +225,16 @@ namespace std_ivy{
       if (prev_count==1){
         // We were the only owner, so we can clean up. We must have write access first.
         if (this->check_write_access()){
-          auto const current_mem_type = this->get_memory_type();
+          // Sole owner: snapshot the whole control block once (no concurrent refcount activity).
+          control_block_type const cb = this->load_control_block();
           operate_with_GPU_stream_from_pointer(
             stream_, ref_stream,
             __ENCAPSULATE__(
               if (ptr_){
-                element_allocator_traits::destruct(ptr_, this->size(), current_mem_type, ref_stream);
-                element_allocator_traits::deallocate(ptr_, this->capacity(), current_mem_type, ref_stream);
+                element_allocator_traits::destruct(ptr_, cb.size, cb.mem_type, ref_stream);
+                element_allocator_traits::deallocate(ptr_, cb.capacity, cb.mem_type, ref_stream);
               }
-              if (size_) size_allocator_traits::destroy(size_, 1, exec_mem_type_, ref_stream);
-              if (capacity_) size_allocator_traits::destroy(capacity_, 1, exec_mem_type_, ref_stream);
-              counter_allocator_traits::destroy(ref_count_, 1, exec_mem_type_, ref_stream);
-              if (mem_type_) mem_type_allocator_traits::destroy(mem_type_, 1, exec_mem_type_, ref_stream);
+              control_block_allocator_traits::destroy(cblock_, 1, exec_mem_type_, ref_stream);
             )
           );
         }
@@ -274,31 +246,84 @@ namespace std_ivy{
     }
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::dump(){
-    mem_type_ = nullptr;
+    cblock_ = nullptr;
     ptr_ = nullptr;
-    size_ = nullptr;
-    capacity_ = nullptr;
-    ref_count_ = nullptr;
     stream_ = nullptr;
     progenitor_mem_type_ = exec_mem_type_ = IvyMemoryHelpers::get_execution_default_memory();
   }
 
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ bool IvyUnifiedPtr<T, IPT>::control_block_is_addressable() const{
+    return IvyMemoryHelpers::is_addressable_from_execution(exec_mem_type_);
+  }
+  template<typename T, IvyPointerType IPT> template<typename U> __HOST_DEVICE__ U IvyUnifiedPtr<T, IPT>::read_meta_field(U* p_field) const{
+    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    // Directly addressable: read in place with no transfer at all.
+    if (this->control_block_is_addressable()) return *p_field;
+    // Otherwise transfer the single field into an on-stack temporary (no heap scratch buffer).
+    U ret;
+    U* p_ret = &ret;
+    operate_with_GPU_stream_from_pointer(
+      stream_, ref_stream,
+      __ENCAPSULATE__(
+        std_ivy::allocator_traits<std_ivy::allocator<U>>::transfer(p_ret, p_field, 1, def_mem_type, exec_mem_type_, ref_stream);
+      )
+    );
+    return ret;
+  }
+  template<typename T, IvyPointerType IPT> template<typename U> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::write_meta_field(U* p_field, U const& val){
+    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    if (this->control_block_is_addressable()){ *p_field = val; return; }
+    U tmp = val;
+    U* p_tmp = &tmp;
+    operate_with_GPU_stream_from_pointer(
+      stream_, ref_stream,
+      __ENCAPSULATE__(
+        std_ivy::allocator_traits<std_ivy::allocator<U>>::transfer(p_field, p_tmp, 1, exec_mem_type_, def_mem_type, ref_stream);
+      )
+    );
+  }
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::control_block_type IvyUnifiedPtr<T, IPT>::load_control_block() const{
+    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    control_block_type cb{ __STATIC_CAST__(counter_type, 0), __STATIC_CAST__(size_type, 0), __STATIC_CAST__(size_type, 0), def_mem_type };
+    if (!cblock_) return cb;
+    if (this->control_block_is_addressable()) return *cblock_;
+    control_block_type* p_cb = &cb;
+    operate_with_GPU_stream_from_pointer(
+      stream_, ref_stream,
+      __ENCAPSULATE__(
+        control_block_allocator_traits::transfer(p_cb, cblock_, 1, def_mem_type, exec_mem_type_, ref_stream);
+      )
+    );
+    return cb;
+  }
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::store_control_block(control_block_type const& cb){
+    if (!cblock_) return;
+    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    if (this->control_block_is_addressable()){ *cblock_ = cb; return; }
+    control_block_type tmp = cb;
+    control_block_type* p_tmp = &tmp;
+    operate_with_GPU_stream_from_pointer(
+      stream_, ref_stream,
+      __ENCAPSULATE__(
+        control_block_allocator_traits::transfer(cblock_, p_tmp, 1, exec_mem_type_, def_mem_type, ref_stream);
+      )
+    );
+  }
+
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyMemoryType const& IvyUnifiedPtr<T, IPT>::get_progenitor_memory_type() const __NOEXCEPT__{ return this->progenitor_mem_type_; }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyMemoryType const& IvyUnifiedPtr<T, IPT>::get_exec_memory_type() const __NOEXCEPT__{ return this->exec_mem_type_; }
-  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyMemoryType* IvyUnifiedPtr<T, IPT>::get_memory_type_ptr() const __NOEXCEPT__{ return this->mem_type_; }
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyMemoryType* IvyUnifiedPtr<T, IPT>::get_memory_type_ptr() const __NOEXCEPT__{ return (this->cblock_ ? &this->cblock_->mem_type : nullptr); }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyGPUStream* IvyUnifiedPtr<T, IPT>::gpu_stream() const __NOEXCEPT__{ return this->stream_; }
-  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::size_type* IvyUnifiedPtr<T, IPT>::size_ptr() const __NOEXCEPT__{ return this->size_; }
-  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::size_type* IvyUnifiedPtr<T, IPT>::capacity_ptr() const __NOEXCEPT__{ return this->capacity_; }
-  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::counter_type* IvyUnifiedPtr<T, IPT>::counter() const __NOEXCEPT__{ return this->ref_count_; }
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::size_type* IvyUnifiedPtr<T, IPT>::size_ptr() const __NOEXCEPT__{ return (this->cblock_ ? &this->cblock_->size : nullptr); }
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::size_type* IvyUnifiedPtr<T, IPT>::capacity_ptr() const __NOEXCEPT__{ return (this->cblock_ ? &this->cblock_->capacity : nullptr); }
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::counter_type* IvyUnifiedPtr<T, IPT>::counter() const __NOEXCEPT__{ return (this->cblock_ ? &this->cblock_->ref_count : nullptr); }
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::control_block_type* IvyUnifiedPtr<T, IPT>::control_block() const __NOEXCEPT__{ return this->cblock_; }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::pointer IvyUnifiedPtr<T, IPT>::get() const __NOEXCEPT__{ return this->ptr_; }
 
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyMemoryType& IvyUnifiedPtr<T, IPT>::get_progenitor_memory_type() __NOEXCEPT__{ return this->progenitor_mem_type_; }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyMemoryType& IvyUnifiedPtr<T, IPT>::get_exec_memory_type() __NOEXCEPT__{ return this->exec_mem_type_; }
-  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyMemoryType*& IvyUnifiedPtr<T, IPT>::get_memory_type_ptr() __NOEXCEPT__{ return this->mem_type_; }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyGPUStream*& IvyUnifiedPtr<T, IPT>::gpu_stream() __NOEXCEPT__{ return this->stream_; }
-  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::size_type*& IvyUnifiedPtr<T, IPT>::size_ptr() __NOEXCEPT__{ return this->size_; }
-  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::size_type*& IvyUnifiedPtr<T, IPT>::capacity_ptr() __NOEXCEPT__{ return this->capacity_; }
-  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::counter_type*& IvyUnifiedPtr<T, IPT>::counter() __NOEXCEPT__{ return this->ref_count_; }
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::control_block_type*& IvyUnifiedPtr<T, IPT>::control_block() __NOEXCEPT__{ return this->cblock_; }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::pointer& IvyUnifiedPtr<T, IPT>::get() __NOEXCEPT__{ return this->ptr_; }
 
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::reference IvyUnifiedPtr<T, IPT>::operator*() const __NOEXCEPT__{ return *(this->ptr_); }
@@ -315,85 +340,16 @@ namespace std_ivy{
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ bool IvyUnifiedPtr<T, IPT>::empty() const __NOEXCEPT__{ return this->size()==0; }
 
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::size_type IvyUnifiedPtr<T, IPT>::size() const __NOEXCEPT__{
-    if (!size_) return 0;
-    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-    if (exec_mem_type_ == def_mem_type) return *size_;
-    else{
-      size_type* p_size_ = nullptr;
-      {
-        operate_with_GPU_stream_from_pointer(
-          stream_, ref_stream,
-          __ENCAPSULATE__(
-            p_size_ = size_allocator_traits::allocate(1, def_mem_type, ref_stream);
-            size_allocator_traits::transfer(p_size_, size_, 1, def_mem_type, exec_mem_type_, ref_stream);
-          )
-        );
-      }
-      size_type ret = *p_size_;
-      {
-        operate_with_GPU_stream_from_pointer(
-          stream_, ref_stream,
-          __ENCAPSULATE__(
-            size_allocator_traits::destroy(p_size_, 1, def_mem_type, ref_stream);
-          )
-        );
-      }
-      return ret;
-    }
+    if (!cblock_) return 0;
+    return this->read_meta_field(&cblock_->size);
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::size_type IvyUnifiedPtr<T, IPT>::capacity() const __NOEXCEPT__{
-    if (!capacity_) return 0;
-    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-    if (exec_mem_type_ == def_mem_type) return *capacity_;
-    else{
-      size_type* p_capacity_ = nullptr;
-      {
-        operate_with_GPU_stream_from_pointer(
-          stream_, ref_stream,
-          __ENCAPSULATE__(
-            p_capacity_ = size_allocator_traits::allocate(1, def_mem_type, ref_stream);
-            size_allocator_traits::transfer(p_capacity_, capacity_, 1, def_mem_type, exec_mem_type_, ref_stream);
-          )
-        );
-      }
-      size_type ret = *p_capacity_;
-      {
-        operate_with_GPU_stream_from_pointer(
-          stream_, ref_stream,
-          __ENCAPSULATE__(
-            size_allocator_traits::destroy(p_capacity_, 1, def_mem_type, ref_stream);
-          )
-        );
-      }
-      return ret;
-    }
+    if (!cblock_) return 0;
+    return this->read_meta_field(&cblock_->capacity);
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyMemoryType IvyUnifiedPtr<T, IPT>::get_memory_type() const __NOEXCEPT__{
-    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-    if (!mem_type_) return def_mem_type;
-    if (exec_mem_type_ == def_mem_type) return *mem_type_;
-    else{
-      IvyMemoryType* p_mem_type_ = nullptr;
-      {
-        operate_with_GPU_stream_from_pointer(
-          stream_, ref_stream,
-          __ENCAPSULATE__(
-            p_mem_type_ = mem_type_allocator_traits::allocate(1, def_mem_type, ref_stream);
-            mem_type_allocator_traits::transfer(p_mem_type_, mem_type_, 1, def_mem_type, exec_mem_type_, ref_stream);
-          )
-        );
-      }
-      IvyMemoryType ret = *p_mem_type_;
-      {
-        operate_with_GPU_stream_from_pointer(
-          stream_, ref_stream,
-          __ENCAPSULATE__(
-            mem_type_allocator_traits::destroy(p_mem_type_, 1, def_mem_type, ref_stream);
-          )
-        );
-      }
-      return ret;
-    }
+    if (!cblock_) return IvyMemoryHelpers::get_execution_default_memory();
+    return this->read_meta_field(&cblock_->mem_type);
   }
 
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::reset(){ this->release(); this->dump(); }
@@ -412,7 +368,7 @@ namespace std_ivy{
     }
     else{
       if (stream && this->check_write_access()) stream_ = stream;
-      if (mem_type_ && this->get_memory_type() != mem_type){
+      if (cblock_ && this->get_memory_type() != mem_type){
         __PRINT_ERROR__("IvyUnifiedPtr::reset failed: Incompatible mem_type flags.\n");
         assert(false);
       }
@@ -436,7 +392,7 @@ namespace std_ivy{
     }
     else{
       if (stream && this->check_write_access()) stream_ = stream;
-      if (mem_type_ && this->get_memory_type() != mem_type){
+      if (cblock_ && this->get_memory_type() != mem_type){
         __PRINT_ERROR__("IvyUnifiedPtr::reset() failed: Incompatible mem_type flags.\n");
         assert(false);
       }
@@ -462,25 +418,21 @@ namespace std_ivy{
       if (copy_ptr || current_mem_type != new_mem_type){
         IvyMemoryType misc_mem_type = (transfer_all ? new_mem_type : exec_mem_type_);
         pointer new_ptr_ = nullptr;
-        size_type* new_size_ = nullptr;
-        size_type* new_capacity_ = nullptr;
-        counter_type* new_ref_count_ = nullptr;
-        IvyMemoryType* new_mem_type_ = nullptr;
+        control_block_type* new_cblock_ = nullptr;
         size_type const n_size = this->size();
         size_type const n_capacity = this->capacity();
 
-        // The per-field metadata allocations below are a handful of one-element ops.
-        // Running them serially is faster than spawning OpenMP sections and avoids the
-        // associated leak/race surface; OpenMP is reserved for element-array loops.
+        // The metadata is now a single coalesced control block, so a transfer allocates and
+        // moves one object instead of four. Running this serially is faster than spawning
+        // OpenMP sections and avoids the associated leak/race surface; OpenMP is reserved
+        // for element-array loops.
         operate_with_GPU_stream_from_pointer(
           stream_, ref_stream,
           __ENCAPSULATE__(
             res &= element_allocator_traits::allocate(new_ptr_, n_capacity, new_mem_type, ref_stream);
             res &= element_allocator_traits::transfer(new_ptr_, ptr_, n_size, new_mem_type, current_mem_type, ref_stream);
-            res &= size_allocator_traits::build(new_size_, 1, misc_mem_type, ref_stream, n_size);
-            res &= size_allocator_traits::build(new_capacity_, 1, misc_mem_type, ref_stream, n_capacity);
-            res &= counter_allocator_traits::build(new_ref_count_, 1, misc_mem_type, ref_stream, 1);
-            res &= mem_type_allocator_traits::build(new_mem_type_, 1, misc_mem_type, ref_stream, new_mem_type);
+            new_cblock_ = control_block_allocator_traits::allocate(1, misc_mem_type, ref_stream);
+            res &= (new_cblock_ != nullptr);
           )
         );
 
@@ -496,10 +448,10 @@ namespace std_ivy{
 
         exec_mem_type_ = misc_mem_type;
         ptr_ = new_ptr_;
-        size_ = new_size_;
-        capacity_ = new_capacity_;
-        ref_count_ = new_ref_count_;
-        mem_type_ = new_mem_type_;
+        cblock_ = new_cblock_;
+        // Populate the freshly allocated control block (refcount starts at 1 for the new owner).
+        control_block_type const cb{ __STATIC_CAST__(counter_type, 1), n_size, n_capacity, new_mem_type };
+        this->store_control_block(cb);
       }
     }
     return res;
@@ -513,19 +465,19 @@ namespace std_ivy{
     bool res = true;
     if (ptr && n>0){
       if (stream) stream_ = stream;
-      // Serial: the metadata builds are trivial one-element ops; serial avoids the
-      // OpenMP-sections leak/race surface and is faster for this little work.
+      // Serial: allocating a single coalesced control block is a trivial one-element op;
+      // serial avoids the OpenMP-sections leak/race surface and is faster for this little work.
       operate_with_GPU_stream_from_pointer(
         stream_, ref_stream,
         __ENCAPSULATE__(
           res &= element_allocator_traits::allocate(ptr_, n, mem_type, ref_stream);
           res &= element_allocator_traits::transfer(ptr_, ptr, n, mem_type, mem_type, ref_stream);
-          res &= size_allocator_traits::build(size_, 1, exec_mem_type_, ref_stream, n);
-          res &= size_allocator_traits::build(capacity_, 1, exec_mem_type_, ref_stream, n);
-          res &= counter_allocator_traits::build(ref_count_, 1, exec_mem_type_, ref_stream, __STATIC_CAST__(counter_type, 1));
-          res &= mem_type_allocator_traits::build(mem_type_, 1, exec_mem_type_, ref_stream, mem_type);
+          cblock_ = control_block_allocator_traits::allocate(1, exec_mem_type_, ref_stream);
+          res &= (cblock_ != nullptr);
         )
       );
+      control_block_type const cb{ __STATIC_CAST__(counter_type, 1), n, n, mem_type };
+      this->store_control_block(cb);
     }
     return res;
   }
@@ -547,12 +499,9 @@ namespace std_ivy{
       __PRINT_ERROR__("IvyUnifiedPtr::swap() failed: Incompatible types\n");
       assert(false);
     }
-    std_util::swap(size_, other.size_ptr());
-    std_util::swap(capacity_, other.capacity_ptr());
+    std_util::swap(cblock_, other.control_block());
     std_util::swap(exec_mem_type_, other.get_exec_memory_type());
     std_util::swap(progenitor_mem_type_, other.get_progenitor_memory_type());
-    std_util::swap(mem_type_, other.get_memory_type_ptr());
-    std_util::swap(ref_count_, other.counter());
     std_util::swap(stream_, other.gpu_stream());
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::swap(IvyUnifiedPtr<T, IPT>& other) __NOEXCEPT__{
@@ -565,127 +514,77 @@ namespace std_ivy{
       assert(false);
     }
     std_util::swap(ptr_, other.get());
-    std_util::swap(size_, other.size_ptr());
-    std_util::swap(capacity_, other.capacity_ptr());
+    std_util::swap(cblock_, other.control_block());
     std_util::swap(exec_mem_type_, other.get_exec_memory_type());
     std_util::swap(progenitor_mem_type_, other.get_progenitor_memory_type());
-    std_util::swap(mem_type_, other.get_memory_type_ptr());
-    std_util::swap(ref_count_, other.counter());
     std_util::swap(stream_, other.gpu_stream());
   }
 
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::counter_type IvyUnifiedPtr<T, IPT>::use_count() const{
-    if (!ref_count_) return 0;
-    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-    if (exec_mem_type_ == def_mem_type){
-      return std_atomic::atomic_ref<counter_type>(*ref_count_).load(std_atomic::memory_order_acquire);
+    if (!cblock_) return 0;
+    if (this->control_block_is_addressable()){
+      return std_atomic::atomic_ref<counter_type>(cblock_->ref_count).load(std_atomic::memory_order_acquire);
     }
-    else{
-      counter_type* p_ref_count_ = nullptr;
-      {
-        operate_with_GPU_stream_from_pointer(
-          stream_, ref_stream,
-          __ENCAPSULATE__(
-            p_ref_count_ = counter_allocator_traits::allocate(1, def_mem_type, ref_stream);
-            counter_allocator_traits::transfer(p_ref_count_, ref_count_, 1, def_mem_type, exec_mem_type_, ref_stream);
-          )
-        );
-      }
-      counter_type ret = *p_ref_count_;
-      {
-        operate_with_GPU_stream_from_pointer(
-          stream_, ref_stream,
-          __ENCAPSULATE__(
-            counter_allocator_traits::destroy(p_ref_count_, 1, def_mem_type, ref_stream);
-          )
-        );
-      }
-      return ret;
-    }
+    else return this->read_meta_field(&cblock_->ref_count);
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::counter_type IvyUnifiedPtr<T, IPT>::inc_dec_counter(bool do_inc){
-    if (!ref_count_){
-      __PRINT_ERROR__("IvyUnifiedPtr::inc_dec_counter() failed: ref_count_ is null.\n");
+    if (!cblock_){
+      __PRINT_ERROR__("IvyUnifiedPtr::inc_dec_counter() failed: cblock_ is null.\n");
       assert(false);
     }
-    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-    if (exec_mem_type_ == def_mem_type){
-      // The counter lives in directly-addressable memory of the current execution space.
-      // Mutate it atomically so concurrent copies/destructions of shared_ptr are race-free.
+    if (this->control_block_is_addressable()){
+      // The control block lives in directly-addressable memory of the current execution space.
+      // Mutate the counter atomically so concurrent copies/destructions of shared_ptr are race-free.
       // Increments may use relaxed ordering; the decrement must be acquire/release so that
       // the thread observing the transition to zero sees all prior writes before freeing.
       // std_atomic::atomic_ref maps to cuda::atomic_ref (CUDA) or std::atomic_ref (host),
       // so both execution spaces share the same ordering guarantees.
-      std_atomic::atomic_ref<counter_type> a_ref_count(*ref_count_);
+      std_atomic::atomic_ref<counter_type> a_ref_count(cblock_->ref_count);
       if (do_inc) return a_ref_count.fetch_add(__STATIC_CAST__(counter_type, 1), std_atomic::memory_order_relaxed);
       else return a_ref_count.fetch_sub(__STATIC_CAST__(counter_type, 1), std_atomic::memory_order_acq_rel);
     }
     else{
-      counter_type prev = 0;
-      counter_type* p_ref_count_ = nullptr;
-      operate_with_GPU_stream_from_pointer(
-        stream_, ref_stream,
-        __ENCAPSULATE__(
-          p_ref_count_ = counter_allocator_traits::allocate(1, def_mem_type, ref_stream);
-          counter_allocator_traits::transfer(p_ref_count_, ref_count_, 1, def_mem_type, exec_mem_type_, ref_stream);
-          prev = *p_ref_count_;
-          if (do_inc) ++(*p_ref_count_);
-          else --(*p_ref_count_);
-          counter_allocator_traits::transfer(ref_count_, p_ref_count_, 1, exec_mem_type_, def_mem_type, ref_stream);
-          counter_allocator_traits::deallocate(p_ref_count_, 1, def_mem_type, ref_stream);
-        )
-      );
+      // Non-addressable (e.g. device) memory: read just the counter field into an on-stack
+      // temporary, modify it, and write it back. This touches only the ref_count field so it
+      // cannot clobber concurrent updates to the other control-block fields.
+      counter_type prev = this->read_meta_field(&cblock_->ref_count);
+      counter_type next = prev;
+      if (do_inc) ++next;
+      else --next;
+      this->write_meta_field(&cblock_->ref_count, next);
       return prev;
     }
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::inc_dec_size(bool do_inc){
-    if (!size_){
-      __PRINT_ERROR__("IvyUnifiedPtr::inc_dec_size() failed: size_ is null.\n");
+    if (!cblock_){
+      __PRINT_ERROR__("IvyUnifiedPtr::inc_dec_size() failed: cblock_ is null.\n");
       assert(false);
     }
-    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-    if (exec_mem_type_ == def_mem_type){
-      if (do_inc) ++(*size_);
-      else --(*size_);
+    if (this->control_block_is_addressable()){
+      if (do_inc) ++(cblock_->size);
+      else --(cblock_->size);
     }
     else{
-      size_type* p_size_ = nullptr;
-      operate_with_GPU_stream_from_pointer(
-        stream_, ref_stream,
-        __ENCAPSULATE__(
-          p_size_ = size_allocator_traits::allocate(1, def_mem_type, ref_stream);
-          size_allocator_traits::transfer(p_size_, size_, 1, def_mem_type, exec_mem_type_, ref_stream);
-          if (do_inc) ++(*p_size_);
-          else --(*p_size_);
-          size_allocator_traits::transfer(size_, p_size_, 1, exec_mem_type_, def_mem_type, ref_stream);
-          size_allocator_traits::deallocate(p_size_, 1, def_mem_type, ref_stream);
-        )
-      );
+      size_type s = this->read_meta_field(&cblock_->size);
+      if (do_inc) ++s;
+      else --s;
+      this->write_meta_field(&cblock_->size, s);
     }
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::inc_dec_capacity(bool do_inc, size_type inc){
-    if (!capacity_){
-      __PRINT_ERROR__("IvyUnifiedPtr::inc_dec_capacity() failed: capacity_ is null.\n");
+    if (!cblock_){
+      __PRINT_ERROR__("IvyUnifiedPtr::inc_dec_capacity() failed: cblock_ is null.\n");
       assert(false);
     }
-    constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-    if (exec_mem_type_ == def_mem_type){
-      if (do_inc) ++(*capacity_);
-      else --(*capacity_);
+    if (this->control_block_is_addressable()){
+      if (do_inc) cblock_->capacity += inc;
+      else cblock_->capacity -= inc;
     }
     else{
-      size_type* p_capacity_ = nullptr;
-      operate_with_GPU_stream_from_pointer(
-        stream_, ref_stream,
-        __ENCAPSULATE__(
-          p_capacity_ = size_allocator_traits::allocate(1, def_mem_type, ref_stream);
-          size_allocator_traits::transfer(p_capacity_, capacity_, 1, def_mem_type, exec_mem_type_, ref_stream);
-          if (do_inc) *p_capacity_ += inc;
-          else *p_capacity_ -= inc;
-          size_allocator_traits::transfer(capacity_, p_capacity_, 1, exec_mem_type_, def_mem_type, ref_stream);
-          size_allocator_traits::deallocate(p_capacity_, 1, def_mem_type, ref_stream);
-        )
-      );
+      size_type c = this->read_meta_field(&cblock_->capacity);
+      if (do_inc) c += inc;
+      else c -= inc;
+      this->write_meta_field(&cblock_->capacity, c);
     }
   }
 
