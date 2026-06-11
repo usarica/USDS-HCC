@@ -175,7 +175,7 @@ int main(){
     __PRINT_INFO__("**********\n");
 
     auto& stream = *(streams[i]);
-    __PRINT_INFO__("Stream %i (%p, %p, size in bytes = %d) computing...\n", i, &stream, stream.stream(), sizeof(&stream));
+    __PRINT_INFO__("Stream %i (%p, %p, size in bytes = %llu) computing...\n", i, &stream, (void*) &stream.stream(), __STATIC_CAST__(unsigned long long, sizeof(&stream)));
 
     utest(stream);
 
