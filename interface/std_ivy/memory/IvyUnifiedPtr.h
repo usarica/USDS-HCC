@@ -244,6 +244,11 @@ namespace std_ivy{
         cblock_ = control_block_allocator_traits::allocate(1, exec_mem_type_, ref_stream);
       )
     );
+    if (!cblock_){
+      __PRINT_ERROR__("IvyUnifiedPtr::init_members: Failed to allocate the control block at %p.\n", this);
+      assert(false);
+      return;
+    }
     control_block_type cb{ __STATIC_CAST__(counter_type, 1), n_size, n_capacity, mem_type };
     this->store_control_block(cb);
   }
@@ -291,14 +296,19 @@ namespace std_ivy{
     // Directly addressable: read in place with no transfer at all.
     if (this->control_block_is_addressable()) return *p_field;
     // Otherwise transfer the single field into an on-stack temporary (no heap scratch buffer).
-    U ret;
+    U ret{};
     U* p_ret = &ret;
+    bool transfer_success = false;
     operate_with_GPU_stream_from_pointer(
       stream_, ref_stream,
       __ENCAPSULATE__(
-        std_ivy::allocator_traits<std_ivy::allocator<U>>::transfer(p_ret, p_field, 1, def_mem_type, exec_mem_type_, ref_stream);
+        transfer_success = std_ivy::allocator_traits<std_ivy::allocator<U>>::transfer(p_ret, p_field, 1, def_mem_type, exec_mem_type_, ref_stream);
       )
     );
+    if (!transfer_success){
+      __PRINT_ERROR__("IvyUnifiedPtr::read_meta_field: Failed to transfer the metadata field at %p.\n", p_field);
+      assert(false);
+    }
     return ret;
   }
   template<typename T, IvyPointerType IPT> template<typename U> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::write_meta_field(U* p_field, U const& val){
@@ -306,12 +316,17 @@ namespace std_ivy{
     if (this->control_block_is_addressable()){ *p_field = val; return; }
     U tmp = val;
     U* p_tmp = &tmp;
+    bool transfer_success = false;
     operate_with_GPU_stream_from_pointer(
       stream_, ref_stream,
       __ENCAPSULATE__(
-        std_ivy::allocator_traits<std_ivy::allocator<U>>::transfer(p_field, p_tmp, 1, exec_mem_type_, def_mem_type, ref_stream);
+        transfer_success = std_ivy::allocator_traits<std_ivy::allocator<U>>::transfer(p_field, p_tmp, 1, exec_mem_type_, def_mem_type, ref_stream);
       )
     );
+    if (!transfer_success){
+      __PRINT_ERROR__("IvyUnifiedPtr::write_meta_field: Failed to transfer the metadata field at %p.\n", p_field);
+      assert(false);
+    }
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::control_block_type IvyUnifiedPtr<T, IPT>::load_control_block() const{
     constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();

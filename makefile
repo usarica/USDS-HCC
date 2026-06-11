@@ -157,7 +157,7 @@ utests-asan: santestexedirs
 	for src in $(SANTESTSCC); do \
 	  exe=$(SANTESTEXEDIR)$$(basename $$src .cc); \
 	  echo "[ASan/UBSan] Compiling $$src"; \
-	  $(CXX) $(EXEFLAGS) $(ASAN_FLAGS) -o $$exe $$src $(LIBS); \
+	  $(CXX) $(EXEFLAGS) $(ASAN_FLAGS) -pthread -o $$exe $$src $(LIBS); \
 	done; \
 	for src in $(SANTESTSCC); do \
 	  exe=$(SANTESTEXEDIR)$$(basename $$src .cc); \
@@ -170,7 +170,7 @@ utests-tsan: santestexedirs
 	for src in $(TSANTESTSCC); do \
 	  exe=$(SANTESTEXEDIR)$$(basename $$src .cc).tsan; \
 	  echo "[TSan] Compiling $$src"; \
-	  $(CXX) $(EXEFLAGS) $(TSAN_FLAGS) -o $$exe $$src $(LIBS); \
+	  $(CXX) $(EXEFLAGS) $(TSAN_FLAGS) -pthread -o $$exe $$src $(LIBS); \
 	done; \
 	for src in $(TSANTESTSCC); do \
 	  exe=$(SANTESTEXEDIR)$$(basename $$src .cc).tsan; \
