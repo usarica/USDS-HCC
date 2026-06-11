@@ -136,8 +136,8 @@ void utest(IvyGPUStream& stream){
     uniqueptr_allocator_traits::transfer(h_ptr_unique, &h_unique_transferable, 1, IvyMemoryType::Host, IvyMemoryType::Host, stream);
     __PRINT_INFO__("h_unique_transferable no. of copies, dummy_D addr., dummy_D.a: %llu, %p, %f\n", h_unique_transferable.use_count(), h_unique_transferable.get(), h_unique_transferable->a);
     __PRINT_INFO__("h_ptr_unique no. of copies, dummy_D addr., dummy_D.a: %llu, %p, %f\n", h_ptr_unique->use_count(), h_ptr_unique->get(), (*h_ptr_unique)->a);
-    __PRINT_INFO__("Deallocating h_ptr_unique...\n");
-    uniqueptr_allocator_traits::deallocate(h_ptr_unique, 1, IvyMemoryType::Host, stream);
+    __PRINT_INFO__("Destroying h_ptr_unique...\n");
+    uniqueptr_allocator_traits::destroy(h_ptr_unique, 1, IvyMemoryType::Host, stream);
   }
   {
     __PRINT_INFO__("\t- Testing IvyUnifiedPtr<IvyUnifiedPtr> memory allocation...\n");
