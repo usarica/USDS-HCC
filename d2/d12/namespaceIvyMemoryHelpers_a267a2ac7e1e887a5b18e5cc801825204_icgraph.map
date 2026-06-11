@@ -1,9 +1,13 @@
 <map id="IvyMemoryHelpers::use_device_host" name="IvyMemoryHelpers::use_device_host">
-<area shape="rect" id="Node000001" title="Check if operations on type should run on host execution resources." alt="" coords="775,13,952,53"/>
-<area shape="rect" id="Node000002" href="$d2/d12/namespaceIvyMemoryHelpers.html#a09350a171b5816635d61420c19848923" title="Check if host&#45;side code must dispatch accelerator kernels for type." alt="" coords="552,13,727,53"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="761,35,727,35,727,30,761,30"/>
-<area shape="rect" id="Node000003" href="$da/d66/classstd__ivy_1_1transfer__memory__primitive__with__internal__memory.html#ab2569adf368320ea27f0c9c21aabfcdf" title="Transfer nested/internal allocations for each element." alt="" coords="243,5,504,60"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="538,35,504,35,504,30,538,30"/>
-<area shape="rect" id="Node000004" href="$da/d66/classstd__ivy_1_1transfer__memory__primitive__with__internal__memory.html#ad572612af1fe3a17209cf0fe7e09c9a4" title="Transfer element storage and then reconcile nested/internal allocations." alt="" coords="5,5,195,60"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="229,35,195,35,195,30,229,30"/>
+<area shape="rect" id="Node000001" title="Check if operations on type should run on host execution resources." alt="" coords="816,41,993,81"/>
+<area shape="rect" id="Node000002" href="$d2/d12/namespaceIvyMemoryHelpers.html#abd39d3444ad57f7a25dd7b55c44e9015" title="Check if memory of type is directly addressable from the current execution space (no cross&#45;domain cop..." alt="" coords="552,8,768,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="802,50,768,45,769,40,803,45"/>
+<area shape="rect" id="Node000004" href="$d2/d12/namespaceIvyMemoryHelpers.html#a09350a171b5816635d61420c19848923" title="Check if host&#45;side code must dispatch accelerator kernels for type." alt="" coords="573,73,747,113"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="803,77,748,85,747,79,802,72"/>
+<area shape="rect" id="Node000003" href="$df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a2619289a6d3d0342e9fe2af14ec848b1" title="Whether the control block lives in memory directly addressable from the current execution space." alt="" coords="263,5,484,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="538,30,484,29,484,24,538,24"/>
+<area shape="rect" id="Node000005" href="$da/d66/classstd__ivy_1_1transfer__memory__primitive__with__internal__memory.html#ab2569adf368320ea27f0c9c21aabfcdf" title="Transfer nested/internal allocations for each element." alt="" coords="243,70,504,125"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="559,97,504,98,504,93,559,92"/>
+<area shape="rect" id="Node000006" href="$da/d66/classstd__ivy_1_1transfer__memory__primitive__with__internal__memory.html#ad572612af1fe3a17209cf0fe7e09c9a4" title="Transfer element storage and then reconcile nested/internal allocations." alt="" coords="5,70,195,125"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="229,100,195,100,195,95,229,95"/>
 </map>

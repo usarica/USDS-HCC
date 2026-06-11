@@ -1,18 +1,20 @@
 <map id="std_ivy::transfer_memory_primitive_with_internal_memory::transfer_internal_memory" name="std_ivy::transfer_memory_primitive_with_internal_memory::transfer_internal_memory">
-<area shape="rect" id="Node000001" title="Transfer nested/internal allocations for each element." alt="" coords="5,55,267,110"/>
-<area shape="rect" id="Node000002" href="$d2/d12/namespaceIvyMemoryHelpers.html#a09350a171b5816635d61420c19848923" title="Check if host&#45;side code must dispatch accelerator kernels for type." alt="" coords="315,63,489,103"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="267,80,301,80,301,85,267,85"/>
-<area shape="rect" id="Node000003" href="$d2/d12/namespaceIvyMemoryHelpers.html#a725e8fe9b15c51e1897f47a12820a6b8" title="Return default memory domain associated with the current compilation/execution context." alt="" coords="537,5,744,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="485,60,543,46,544,51,487,65"/>
-<area shape="rect" id="Node000004" href="$d2/d12/namespaceIvyMemoryHelpers.html#af7f504c8e6240385fdf2c47448a20965" title="Check if operations on type should run on any accelerator backend." alt="" coords="792,92,969,132"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="490,85,778,103,778,108,489,91"/>
-<area shape="rect" id="Node000008" href="$d2/d12/namespaceIvyMemoryHelpers.html#a267a2ac7e1e887a5b18e5cc801825204" title="Check if operations on type should run on host execution resources." alt="" coords="552,120,729,160"/>
-<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="487,100,544,114,543,119,485,105"/>
-<area shape="rect" id="Node000005" href="$d2/d12/namespaceIvyMemoryHelpers.html#a325d02345e7a58363de443d83056e5df" title="Check if operations on type should run on GPU execution resources." alt="" coords="1017,92,1195,132"/>
-<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="969,109,1004,109,1004,115,969,115"/>
-<area shape="rect" id="Node000006" href="$d2/d12/namespaceIvyMemoryHelpers.html#aa3ba0d79acd7a63fba4e7daab00d226f" title="Check if type is GPU device memory." alt="" coords="1243,60,1408,100"/>
-<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="1194,96,1229,91,1230,97,1195,102"/>
-<area shape="rect" id="Node000007" href="$d2/d12/namespaceIvyMemoryHelpers.html#ac98311832d01eb8d1357265dd95db4eb" title="Check if type is any unified&#45;memory variant." alt="" coords="1243,124,1408,164"/>
-<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="1195,122,1230,127,1229,133,1194,128"/>
-<area shape="poly" id="edge8_Node000008_Node000004" title=" " alt="" coords="729,127,778,121,779,127,730,132"/>
+<area shape="rect" id="Node000001" title="Transfer nested/internal allocations for each element." alt="" coords="5,91,267,146"/>
+<area shape="rect" id="Node000002" href="$d2/d12/namespaceIvyMemoryHelpers.html#a09350a171b5816635d61420c19848923" title="Check if host&#45;side code must dispatch accelerator kernels for type." alt="" coords="327,63,502,103"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="267,99,314,93,314,98,267,104"/>
+<area shape="rect" id="Node000009" href="$d9/dd1/classstd__ivy_1_1kernel__generic__transfer__internal__memory.html#ad7bbb614755babc42048772f123edb69" title="Dispatch element&#45;level internal memory transfer." alt="" coords="315,127,515,182"/>
+<area shape="poly" id="edge9_Node000001_Node000009" title=" " alt="" coords="267,133,301,137,300,143,267,138"/>
+<area shape="rect" id="Node000003" href="$d2/d12/namespaceIvyMemoryHelpers.html#a725e8fe9b15c51e1897f47a12820a6b8" title="Return default memory domain associated with the current compilation/execution context." alt="" coords="563,5,769,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="502,60,564,46,565,51,503,65"/>
+<area shape="rect" id="Node000004" href="$d2/d12/namespaceIvyMemoryHelpers.html#af7f504c8e6240385fdf2c47448a20965" title="Check if operations on type should run on any accelerator backend." alt="" coords="817,92,995,132"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="502,85,804,103,804,109,502,91"/>
+<area shape="rect" id="Node000008" href="$d2/d12/namespaceIvyMemoryHelpers.html#a267a2ac7e1e887a5b18e5cc801825204" title="Check if operations on type should run on host execution resources." alt="" coords="577,120,755,160"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="503,100,565,114,564,119,502,105"/>
+<area shape="rect" id="Node000005" href="$d2/d12/namespaceIvyMemoryHelpers.html#a325d02345e7a58363de443d83056e5df" title="Check if operations on type should run on GPU execution resources." alt="" coords="1043,92,1220,132"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="995,109,1029,109,1029,115,995,115"/>
+<area shape="rect" id="Node000006" href="$d2/d12/namespaceIvyMemoryHelpers.html#aa3ba0d79acd7a63fba4e7daab00d226f" title="Check if type is GPU device memory." alt="" coords="1268,60,1433,100"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="1220,96,1254,91,1255,97,1221,102"/>
+<area shape="rect" id="Node000007" href="$d2/d12/namespaceIvyMemoryHelpers.html#ac98311832d01eb8d1357265dd95db4eb" title="Check if type is any unified&#45;memory variant." alt="" coords="1268,124,1433,164"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="1221,122,1255,127,1254,133,1220,128"/>
+<area shape="poly" id="edge8_Node000008_Node000004" title=" " alt="" coords="754,127,803,121,804,127,755,132"/>
 </map>

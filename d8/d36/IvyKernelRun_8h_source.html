@@ -244,7 +244,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span><span class="preprocessor">      }</span></div>
 <div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span><span class="preprocessor">#if defined(OPENMP_ENABLED)</span></div>
 <div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>      <a class="code hl_typedef" href="../../d1/db3/IvyBasicTypes_8h.html#a4f444bfc2d9b446bd9e27c1d6f7f86f2">IvyTypes::size_t</a> nxy = nx*ny;</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>      <span class="keywordflow">if</span> (nxy&gt;=8){</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>      <span class="keywordflow">if</span> (nxy&gt;=NUM_CPU_THREADS_THRESHOLD_ND){</div>
 <div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span><span class="preprocessor">        #pragma omp parallel for collapse(2) schedule(static)</span></div>
 <div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>        _KERNEL_UNIT_CMD</div>
 <div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>      }</div>
@@ -275,7 +275,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span><span class="preprocessor">      }</span></div>
 <div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span><span class="preprocessor">#if defined(OPENMP_ENABLED)</span></div>
 <div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>      <a class="code hl_typedef" href="../../d1/db3/IvyBasicTypes_8h.html#a4f444bfc2d9b446bd9e27c1d6f7f86f2">IvyTypes::size_t</a> nxyz = nx*ny*nz;</div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>      <span class="keywordflow">if</span> (nxyz&gt;=8){</div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>      <span class="keywordflow">if</span> (nxyz&gt;=NUM_CPU_THREADS_THRESHOLD_ND){</div>
 <div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span><span class="preprocessor">        #pragma omp parallel for collapse(3) schedule(static)</span></div>
 <div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>        _KERNEL_UNIT_CMD</div>
 <div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>      }</div>
@@ -325,7 +325,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span><span class="preprocessor">    }</span></div>
 <div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span><span class="preprocessor">#if defined(OPENMP_ENABLED)</span></div>
 <div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>    <a class="code hl_typedef" href="../../d1/db3/IvyBasicTypes_8h.html#a4f444bfc2d9b446bd9e27c1d6f7f86f2">IvyTypes::size_t</a> nxy = nx*ny;</div>
-<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>    <span class="keywordflow">if</span> (nxy&gt;=8){</div>
+<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>    <span class="keywordflow">if</span> (nxy&gt;=NUM_CPU_THREADS_THRESHOLD_ND){</div>
 <div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span><span class="preprocessor">      #pragma omp parallel for collapse(2) schedule(static)</span></div>
 <div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>      _KERNEL_CMD</div>
 <div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>    }</div>
@@ -350,7 +350,7 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span><span class="preprocessor">    }</span></div>
 <div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span><span class="preprocessor">#if defined(OPENMP_ENABLED)</span></div>
 <div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>    <a class="code hl_typedef" href="../../d1/db3/IvyBasicTypes_8h.html#a4f444bfc2d9b446bd9e27c1d6f7f86f2">IvyTypes::size_t</a> nxyz = nx*ny*nz;</div>
-<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>    <span class="keywordflow">if</span> (nxyz&gt;=8){</div>
+<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>    <span class="keywordflow">if</span> (nxyz&gt;=NUM_CPU_THREADS_THRESHOLD_ND){</div>
 <div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span><span class="preprocessor">      #pragma omp parallel for collapse(3) schedule(static)</span></div>
 <div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span>      _KERNEL_CMD</div>
 <div class="line"><a id="l00406" name="l00406"></a><span class="lineno">  406</span>    }</div>

@@ -10,7 +10,7 @@ var searchData=
   ['max_7',['max',['../d1/da1/namespacestd__ivy.html#ab1f559bbbe4834fdae00122f2b19a1c3',1,'std_ivy']]],
   ['max_5fbucket_5fcount_8',['max_bucket_count',['../d0/d3c/classstd__ivy_1_1IvyUnorderedMap.html#a588a1fd796b5a59384d907152bc003e4',1,'std_ivy::IvyUnorderedMap']]],
   ['max_5fsize_9',['max_size',['../d2/d97/classstd__ivy_1_1IvyVector.html#a9558ad134b4ad7e53b15f0f30604856d',1,'std_ivy::IvyVector::max_size()'],['../d9/d43/classstd__ivy_1_1allocation__type__properties_3_01T_01const_01_4.html#a9b8ff43404432675a62afbbb577a277d',1,'std_ivy::allocation_type_properties&lt; T const &gt;::max_size()'],['../d0/d3c/classstd__ivy_1_1IvyUnorderedMap.html#ad2b0e0e068cad344763b0157d734b5a1',1,'std_ivy::IvyUnorderedMap::max_size()'],['../da/d8b/classstd__ivy_1_1allocation__type__properties.html#a54f6b065dc2161cf03f4d07c098ceb94',1,'std_ivy::allocation_type_properties::max_size()']]],
-  ['mem_5ftype_5f_10',['mem_type_',['../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a111d9ed79c4a2d3bc5e71fec5fefb49a',1,'std_ivy::IvyUnifiedPtr']]],
+  ['mem_5ftype_10',['mem_type',['../d7/d76/structstd__ivy_1_1IvyUnifiedPtrControlBlock.html#a795a3c72f30d7b8d369891a84943c136',1,'std_ivy::IvyUnifiedPtrControlBlock']]],
   ['mem_5ftype_5fallocator_5ftraits_11',['mem_type_allocator_traits',['../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#aa8066e884b89c0c832960baae1d6b0d0',1,'std_ivy::IvyUnifiedPtr']]],
   ['mem_5ftype_5fallocator_5ftype_12',['mem_type_allocator_type',['../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a0fdc043d8ffabda70ecec98daccac196',1,'std_ivy::IvyUnifiedPtr']]],
   ['memory_20aware_20stl_20like_20layer_13',['1) Heterogeneous containers and memory-aware STL-like layer',['../index.html#autotoc_md21',1,'']]],

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['wait_0',['wait',['../d2/dbe/classIvyBaseStream.html#a303413854c68d747bb671a292e7ddd65',1,'IvyBaseStream::wait()'],['../d7/d26/classIvyBlankStream.html#a859666a1c067803fc2f10ac56de8b07c',1,'IvyBlankStream::wait(Base_t::RawEvent_t &amp;event, unsigned int wait_flags)'],['../d7/d26/classIvyBlankStream.html#a3e868e3d746adc503748bb21e2b18ca8',1,'IvyBlankStream::wait(IvyBlankStreamEvent &amp;event, IvyBlankStreamEvent::WaitFlags wait_flags=IvyBlankStreamEvent::WaitFlags::Default)']]]
+  ['view_0',['view',['../d1/da1/namespacestd__ivy.html#ad14c2924fbb1b3faaf13ed72f618d991',1,'std_ivy::view()'],['../df/d9e/IvyVectorImpl_8h.html#a9e204b9da3b8bca8fb66d248c67b1614',1,'std_mem::view()']]]
 ];

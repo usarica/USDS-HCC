@@ -89,6 +89,16 @@ $(function() {
  <a href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="../../d3/d04/IvyUnifiedPtr_8hh_source.html">IvyUnifiedPtr.hh</a>&gt;</code></p>
+<div class="dynheader">
+Collaboration diagram for std_ivy::IvyUnifiedPtr&lt; T, IPT &gt;:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../dc/df3/classstd__ivy_1_1IvyUnifiedPtr__coll__graph.png" border="0" usemap="#astd__ivy_1_1IvyUnifiedPtr_3_01T_00_01IPT_01_4_coll__map" alt="Collaboration graph"/></div>
+<map name="astd__ivy_1_1IvyUnifiedPtr_3_01T_00_01IPT_01_4_coll__map" id="astd__ivy_1_1IvyUnifiedPtr_3_01T_00_01IPT_01_4_coll__map">
+<area shape="rect" title="Forward declaration of the unified smart pointer template." alt="" coords="29,108,189,148"/>
+<area shape="rect" href="../../d7/d76/structstd__ivy_1_1IvyUnifiedPtrControlBlock.html" title="Coalesced control block holding all IvyUnifiedPtr metadata in a single allocation." alt="" coords="5,5,212,45"/>
+<area shape="poly" title=" " alt="" coords="111,59,111,108,106,108,106,59"/>
+</map>
+<center><span class="legend">[<a href="../../graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -148,6 +158,18 @@ typedef <a class="el" href="../../d1/d9a/classstd__ivy_1_1allocator__traits.html
 typedef <a class="el" href="../../d1/d9a/classstd__ivy_1_1allocator__traits.html">std_ivy::allocator_traits</a>&lt; <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a0fdc043d8ffabda70ecec98daccac196">mem_type_allocator_type</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mem_type_allocator_traits</b></td></tr>
 <tr class="memdesc:aa8066e884b89c0c832960baae1d6b0d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Traits for <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a0fdc043d8ffabda70ecec98daccac196">mem_type_allocator_type</a>. <br /></td></tr>
 <tr class="separator:aa8066e884b89c0c832960baae1d6b0d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a676076669641f9478828b05fafb53239" id="r_a676076669641f9478828b05fafb53239"><td class="memItemLeft" align="right" valign="top"><a id="a676076669641f9478828b05fafb53239" name="a676076669641f9478828b05fafb53239"></a>
+typedef <a class="el" href="../../d7/d76/structstd__ivy_1_1IvyUnifiedPtrControlBlock.html">IvyUnifiedPtrControlBlock</a>&#160;</td><td class="memItemRight" valign="bottom"><b>control_block_type</b></td></tr>
+<tr class="memdesc:a676076669641f9478828b05fafb53239"><td class="mdescLeft">&#160;</td><td class="mdescRight">Coalesced metadata control-block type (element-type independent). <br /></td></tr>
+<tr class="separator:a676076669641f9478828b05fafb53239"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab30ca4720ad34e74b78e1305bba8a317" id="r_ab30ca4720ad34e74b78e1305bba8a317"><td class="memItemLeft" align="right" valign="top"><a id="ab30ca4720ad34e74b78e1305bba8a317" name="ab30ca4720ad34e74b78e1305bba8a317"></a>
+typedef <a class="el" href="../../d5/d3d/classstd__ivy_1_1allocator.html">std_ivy::allocator</a>&lt; <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a676076669641f9478828b05fafb53239">control_block_type</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>control_block_allocator_type</b></td></tr>
+<tr class="memdesc:ab30ca4720ad34e74b78e1305bba8a317"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocator for the control block. <br /></td></tr>
+<tr class="separator:ab30ca4720ad34e74b78e1305bba8a317"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27c5ba7603f108ec2c4b205ee75c1810" id="r_a27c5ba7603f108ec2c4b205ee75c1810"><td class="memItemLeft" align="right" valign="top"><a id="a27c5ba7603f108ec2c4b205ee75c1810" name="a27c5ba7603f108ec2c4b205ee75c1810"></a>
+typedef <a class="el" href="../../d1/d9a/classstd__ivy_1_1allocator__traits.html">std_ivy::allocator_traits</a>&lt; <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#ab30ca4720ad34e74b78e1305bba8a317">control_block_allocator_type</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>control_block_allocator_traits</b></td></tr>
+<tr class="memdesc:a27c5ba7603f108ec2c4b205ee75c1810"><td class="mdescLeft">&#160;</td><td class="mdescRight">Traits for <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#ab30ca4720ad34e74b78e1305bba8a317">control_block_allocator_type</a>. <br /></td></tr>
+<tr class="separator:a27c5ba7603f108ec2c4b205ee75c1810"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a254add642309825d0dcb2b4a9a8273c2" id="r_a254add642309825d0dcb2b4a9a8273c2"><td class="memTemplParams" colspan="2"><a id="a254add642309825d0dcb2b4a9a8273c2" name="a254add642309825d0dcb2b4a9a8273c2"></a>
 template&lt;typename U &gt; </td></tr>
 <tr class="memitem:a254add642309825d0dcb2b4a9a8273c2"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><b>rebind</b> = <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html">IvyUnifiedPtr</a>&lt; U, IPT &gt;</td></tr>
@@ -245,7 +267,7 @@ __INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../d2/d12/namespac
 <tr class="separator:a4c54d41c232346551889f3cba968ede4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a272903b79c5af072297a5a2c172ba5e1" id="r_a272903b79c5af072297a5a2c172ba5e1"><td class="memItemLeft" align="right" valign="top"><a id="a272903b79c5af072297a5a2c172ba5e1" name="a272903b79c5af072297a5a2c172ba5e1"></a>
 __INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../d2/d12/namespaceIvyMemoryHelpers.html#a968c35d9f245459d30fd909562fa38a9">IvyMemoryType</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>get_memory_type_ptr</b> () const __NOEXCEPT__</td></tr>
-<tr class="memdesc:a272903b79c5af072297a5a2c172ba5e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to memory-type metadata (const). <br /></td></tr>
+<tr class="memdesc:a272903b79c5af072297a5a2c172ba5e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to memory-type metadata (const, points into the control block). <br /></td></tr>
 <tr class="separator:a272903b79c5af072297a5a2c172ba5e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6083a591c989f193e294780fa13d5d47" id="r_a6083a591c989f193e294780fa13d5d47"><td class="memItemLeft" align="right" valign="top"><a id="a6083a591c989f193e294780fa13d5d47" name="a6083a591c989f193e294780fa13d5d47"></a>
 __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyGPUStream *&#160;</td><td class="memItemRight" valign="bottom"><b>gpu_stream</b> () const __NOEXCEPT__</td></tr>
@@ -253,16 +275,20 @@ __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyGPUStream *&#160;</td><td class="memIt
 <tr class="separator:a6083a591c989f193e294780fa13d5d47"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a33d587d5d7ae53bdd7e5cd8c89f661f6" id="r_a33d587d5d7ae53bdd7e5cd8c89f661f6"><td class="memItemLeft" align="right" valign="top"><a id="a33d587d5d7ae53bdd7e5cd8c89f661f6" name="a33d587d5d7ae53bdd7e5cd8c89f661f6"></a>
 __INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a977a99923216ca84ac1506dc2da80287">size_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>size_ptr</b> () const __NOEXCEPT__</td></tr>
-<tr class="memdesc:a33d587d5d7ae53bdd7e5cd8c89f661f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to size metadata (const). <br /></td></tr>
+<tr class="memdesc:a33d587d5d7ae53bdd7e5cd8c89f661f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to size metadata (const, points into the control block). <br /></td></tr>
 <tr class="separator:a33d587d5d7ae53bdd7e5cd8c89f661f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abcf1e1b58e4c48a4ce78e3aad2c1ac42" id="r_abcf1e1b58e4c48a4ce78e3aad2c1ac42"><td class="memItemLeft" align="right" valign="top"><a id="abcf1e1b58e4c48a4ce78e3aad2c1ac42" name="abcf1e1b58e4c48a4ce78e3aad2c1ac42"></a>
 __INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a977a99923216ca84ac1506dc2da80287">size_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>capacity_ptr</b> () const __NOEXCEPT__</td></tr>
-<tr class="memdesc:abcf1e1b58e4c48a4ce78e3aad2c1ac42"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to capacity metadata (const). <br /></td></tr>
+<tr class="memdesc:abcf1e1b58e4c48a4ce78e3aad2c1ac42"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to capacity metadata (const, points into the control block). <br /></td></tr>
 <tr class="separator:abcf1e1b58e4c48a4ce78e3aad2c1ac42"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4c5aa502a1bffea3d5b3c51eceaa9cd6" id="r_a4c5aa502a1bffea3d5b3c51eceaa9cd6"><td class="memItemLeft" align="right" valign="top"><a id="a4c5aa502a1bffea3d5b3c51eceaa9cd6" name="a4c5aa502a1bffea3d5b3c51eceaa9cd6"></a>
 __INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a2f9f1fc4748e5082d5e40fb19da2a22d">counter_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>counter</b> () const __NOEXCEPT__</td></tr>
-<tr class="memdesc:a4c5aa502a1bffea3d5b3c51eceaa9cd6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to reference counter (const). <br /></td></tr>
+<tr class="memdesc:a4c5aa502a1bffea3d5b3c51eceaa9cd6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to reference counter (const, points into the control block). <br /></td></tr>
 <tr class="separator:a4c5aa502a1bffea3d5b3c51eceaa9cd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02fe608c01f9d92fd2639fc1817a34fe" id="r_a02fe608c01f9d92fd2639fc1817a34fe"><td class="memItemLeft" align="right" valign="top"><a id="a02fe608c01f9d92fd2639fc1817a34fe" name="a02fe608c01f9d92fd2639fc1817a34fe"></a>
+__INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a676076669641f9478828b05fafb53239">control_block_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>control_block</b> () const __NOEXCEPT__</td></tr>
+<tr class="memdesc:a02fe608c01f9d92fd2639fc1817a34fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the control block pointer (const). <br /></td></tr>
+<tr class="separator:a02fe608c01f9d92fd2639fc1817a34fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19047411cfdcc36780932ab0334ab1f8" id="r_a19047411cfdcc36780932ab0334ab1f8"><td class="memItemLeft" align="right" valign="top"><a id="a19047411cfdcc36780932ab0334ab1f8" name="a19047411cfdcc36780932ab0334ab1f8"></a>
 __INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#ae44642049dcfe5935dd3b819c1300cbb">pointer</a>&#160;</td><td class="memItemRight" valign="bottom"><b>get</b> () const __NOEXCEPT__</td></tr>
 <tr class="memdesc:a19047411cfdcc36780932ab0334ab1f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get raw managed pointer (const). <br /></td></tr>
@@ -275,26 +301,14 @@ __INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../d2/d12/namespac
 __INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../d2/d12/namespaceIvyMemoryHelpers.html#a968c35d9f245459d30fd909562fa38a9">IvyMemoryType</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_exec_memory_type</b> () __NOEXCEPT__</td></tr>
 <tr class="memdesc:af27011b89bf3eaf5a362442aefc0342f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get execution memory type (mutable). <br /></td></tr>
 <tr class="separator:af27011b89bf3eaf5a362442aefc0342f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adc53c271a6d8f1cbec91882adb064a77" id="r_adc53c271a6d8f1cbec91882adb064a77"><td class="memItemLeft" align="right" valign="top"><a id="adc53c271a6d8f1cbec91882adb064a77" name="adc53c271a6d8f1cbec91882adb064a77"></a>
-__INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../d2/d12/namespaceIvyMemoryHelpers.html#a968c35d9f245459d30fd909562fa38a9">IvyMemoryType</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_memory_type_ptr</b> () __NOEXCEPT__</td></tr>
-<tr class="memdesc:adc53c271a6d8f1cbec91882adb064a77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to memory-type metadata (mutable). <br /></td></tr>
-<tr class="separator:adc53c271a6d8f1cbec91882adb064a77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab9a2c99042a22e99b2b045d26982ade4" id="r_ab9a2c99042a22e99b2b045d26982ade4"><td class="memItemLeft" align="right" valign="top"><a id="ab9a2c99042a22e99b2b045d26982ade4" name="ab9a2c99042a22e99b2b045d26982ade4"></a>
 __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyGPUStream *&amp;&#160;</td><td class="memItemRight" valign="bottom"><b>gpu_stream</b> () __NOEXCEPT__</td></tr>
 <tr class="memdesc:ab9a2c99042a22e99b2b045d26982ade4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get associated stream pointer (mutable). <br /></td></tr>
 <tr class="separator:ab9a2c99042a22e99b2b045d26982ade4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b70cb3f8557ce53e90eb093627d6147" id="r_a8b70cb3f8557ce53e90eb093627d6147"><td class="memItemLeft" align="right" valign="top"><a id="a8b70cb3f8557ce53e90eb093627d6147" name="a8b70cb3f8557ce53e90eb093627d6147"></a>
-__INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a977a99923216ca84ac1506dc2da80287">size_type</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><b>size_ptr</b> () __NOEXCEPT__</td></tr>
-<tr class="memdesc:a8b70cb3f8557ce53e90eb093627d6147"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to size metadata (mutable). <br /></td></tr>
-<tr class="separator:a8b70cb3f8557ce53e90eb093627d6147"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa2e2667b48e52120e36cf73e7f648f5b" id="r_aa2e2667b48e52120e36cf73e7f648f5b"><td class="memItemLeft" align="right" valign="top"><a id="aa2e2667b48e52120e36cf73e7f648f5b" name="aa2e2667b48e52120e36cf73e7f648f5b"></a>
-__INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a977a99923216ca84ac1506dc2da80287">size_type</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><b>capacity_ptr</b> () __NOEXCEPT__</td></tr>
-<tr class="memdesc:aa2e2667b48e52120e36cf73e7f648f5b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to capacity metadata (mutable). <br /></td></tr>
-<tr class="separator:aa2e2667b48e52120e36cf73e7f648f5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5430670c84f385d07a10c9cf400a00a9" id="r_a5430670c84f385d07a10c9cf400a00a9"><td class="memItemLeft" align="right" valign="top"><a id="a5430670c84f385d07a10c9cf400a00a9" name="a5430670c84f385d07a10c9cf400a00a9"></a>
-__INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a2f9f1fc4748e5082d5e40fb19da2a22d">counter_type</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><b>counter</b> () __NOEXCEPT__</td></tr>
-<tr class="memdesc:a5430670c84f385d07a10c9cf400a00a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get pointer to reference counter (mutable). <br /></td></tr>
-<tr class="separator:a5430670c84f385d07a10c9cf400a00a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7265fa914b4c5afb4ab30f199edd69a8" id="r_a7265fa914b4c5afb4ab30f199edd69a8"><td class="memItemLeft" align="right" valign="top"><a id="a7265fa914b4c5afb4ab30f199edd69a8" name="a7265fa914b4c5afb4ab30f199edd69a8"></a>
+__INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a676076669641f9478828b05fafb53239">control_block_type</a> *&amp;&#160;</td><td class="memItemRight" valign="bottom"><b>control_block</b> () __NOEXCEPT__</td></tr>
+<tr class="memdesc:a7265fa914b4c5afb4ab30f199edd69a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the control block pointer (mutable). <br /></td></tr>
+<tr class="separator:a7265fa914b4c5afb4ab30f199edd69a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea68746c66afd595a469981c855111d5" id="r_aea68746c66afd595a469981c855111d5"><td class="memItemLeft" align="right" valign="top"><a id="aea68746c66afd595a469981c855111d5" name="aea68746c66afd595a469981c855111d5"></a>
 __INLINE_FCN_RELAXED__ __HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#ae44642049dcfe5935dd3b819c1300cbb">pointer</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get</b> () __NOEXCEPT__</td></tr>
 <tr class="memdesc:aea68746c66afd595a469981c855111d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get raw managed pointer (mutable). <br /></td></tr>
@@ -452,6 +466,28 @@ template&lt;typename... Args&gt; </td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
+<tr class="memitem:a2619289a6d3d0342e9fe2af14ec848b1" id="r_a2619289a6d3d0342e9fe2af14ec848b1"><td class="memItemLeft" align="right" valign="top"><a id="a2619289a6d3d0342e9fe2af14ec848b1" name="a2619289a6d3d0342e9fe2af14ec848b1"></a>
+__INLINE_FCN_RELAXED__ __HOST_DEVICE__ bool&#160;</td><td class="memItemRight" valign="bottom"><b>control_block_is_addressable</b> () const</td></tr>
+<tr class="memdesc:a2619289a6d3d0342e9fe2af14ec848b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether the control block lives in memory directly addressable from the current execution space. <br /></td></tr>
+<tr class="separator:a2619289a6d3d0342e9fe2af14ec848b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1cc5f49809feb608e4e49046fa13ba6" id="r_aa1cc5f49809feb608e4e49046fa13ba6"><td class="memTemplParams" colspan="2"><a id="aa1cc5f49809feb608e4e49046fa13ba6" name="aa1cc5f49809feb608e4e49046fa13ba6"></a>
+template&lt;typename U &gt; </td></tr>
+<tr class="memitem:aa1cc5f49809feb608e4e49046fa13ba6"><td class="memTemplItemLeft" align="right" valign="top">__HOST_DEVICE__ U&#160;</td><td class="memTemplItemRight" valign="bottom"><b>read_meta_field</b> (U *p_field) const</td></tr>
+<tr class="memdesc:aa1cc5f49809feb608e4e49046fa13ba6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read a single trivially-copyable metadata field, using a stack temporary (no heap) and skipping the copy when directly addressable. <br /></td></tr>
+<tr class="separator:aa1cc5f49809feb608e4e49046fa13ba6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6532682a404c63984c7c7b9c9c60ebeb" id="r_a6532682a404c63984c7c7b9c9c60ebeb"><td class="memTemplParams" colspan="2"><a id="a6532682a404c63984c7c7b9c9c60ebeb" name="a6532682a404c63984c7c7b9c9c60ebeb"></a>
+template&lt;typename U &gt; </td></tr>
+<tr class="memitem:a6532682a404c63984c7c7b9c9c60ebeb"><td class="memTemplItemLeft" align="right" valign="top">__HOST_DEVICE__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>write_meta_field</b> (U *p_field, U const &amp;val)</td></tr>
+<tr class="memdesc:a6532682a404c63984c7c7b9c9c60ebeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write a single trivially-copyable metadata field, using a stack temporary (no heap) and skipping the copy when directly addressable. <br /></td></tr>
+<tr class="separator:a6532682a404c63984c7c7b9c9c60ebeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1853d01e1e0e4796dfc5b75a22d648bb" id="r_a1853d01e1e0e4796dfc5b75a22d648bb"><td class="memItemLeft" align="right" valign="top"><a id="a1853d01e1e0e4796dfc5b75a22d648bb" name="a1853d01e1e0e4796dfc5b75a22d648bb"></a>
+__HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a676076669641f9478828b05fafb53239">control_block_type</a>&#160;</td><td class="memItemRight" valign="bottom"><b>load_control_block</b> () const</td></tr>
+<tr class="memdesc:a1853d01e1e0e4796dfc5b75a22d648bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Snapshot the entire control block in one transfer into a stack copy (batched accessor). <br /></td></tr>
+<tr class="separator:a1853d01e1e0e4796dfc5b75a22d648bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6f300b2b7c8b4bf85692387d0ab446e" id="r_aa6f300b2b7c8b4bf85692387d0ab446e"><td class="memItemLeft" align="right" valign="top"><a id="aa6f300b2b7c8b4bf85692387d0ab446e" name="aa6f300b2b7c8b4bf85692387d0ab446e"></a>
+__HOST_DEVICE__ void&#160;</td><td class="memItemRight" valign="bottom"><b>store_control_block</b> (<a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a676076669641f9478828b05fafb53239">control_block_type</a> const &amp;cb)</td></tr>
+<tr class="memdesc:aa6f300b2b7c8b4bf85692387d0ab446e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write the entire control block in one transfer from a stack copy (batched accessor). <br /></td></tr>
+<tr class="separator:aa6f300b2b7c8b4bf85692387d0ab446e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a874e4d3b39392cd655773270353b3302" id="r_a874e4d3b39392cd655773270353b3302"><td class="memItemLeft" align="right" valign="top"><a id="a874e4d3b39392cd655773270353b3302" name="a874e4d3b39392cd655773270353b3302"></a>
 __HOST_DEVICE__ void&#160;</td><td class="memItemRight" valign="bottom"><b>init_members</b> (<a class="el" href="../../d2/d12/namespaceIvyMemoryHelpers.html#a968c35d9f245459d30fd909562fa38a9">IvyMemoryType</a> mem_type, <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a977a99923216ca84ac1506dc2da80287">size_type</a> n_size, <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a977a99923216ca84ac1506dc2da80287">size_type</a> n_capacity)</td></tr>
 <tr class="memdesc:a874e4d3b39392cd655773270353b3302"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize metadata members for an already assigned pointer. <br /></td></tr>
@@ -464,10 +500,10 @@ __HOST_DEVICE__ void&#160;</td><td class="memItemRight" valign="bottom"><b>relea
 __INLINE_FCN_RELAXED__ __HOST_DEVICE__ void&#160;</td><td class="memItemRight" valign="bottom"><b>dump</b> ()</td></tr>
 <tr class="memdesc:a61d8dba12e1ba2cecd27ce20a5178910"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset this instance to an empty, detached state. <br /></td></tr>
 <tr class="separator:a61d8dba12e1ba2cecd27ce20a5178910"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab0a95e5343c53456a4238a51b6243eb7" id="r_ab0a95e5343c53456a4238a51b6243eb7"><td class="memItemLeft" align="right" valign="top"><a id="ab0a95e5343c53456a4238a51b6243eb7" name="ab0a95e5343c53456a4238a51b6243eb7"></a>
-__HOST_DEVICE__ void&#160;</td><td class="memItemRight" valign="bottom"><b>inc_dec_counter</b> (bool do_inc)</td></tr>
-<tr class="memdesc:ab0a95e5343c53456a4238a51b6243eb7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increment or decrement reference count. <br /></td></tr>
-<tr class="separator:ab0a95e5343c53456a4238a51b6243eb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9342a8ac5b372d16daedfd637465d8d1" id="r_a9342a8ac5b372d16daedfd637465d8d1"><td class="memItemLeft" align="right" valign="top"><a id="a9342a8ac5b372d16daedfd637465d8d1" name="a9342a8ac5b372d16daedfd637465d8d1"></a>
+__HOST_DEVICE__ <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a2f9f1fc4748e5082d5e40fb19da2a22d">counter_type</a>&#160;</td><td class="memItemRight" valign="bottom"><b>inc_dec_counter</b> (bool do_inc)</td></tr>
+<tr class="memdesc:a9342a8ac5b372d16daedfd637465d8d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Atomically increment or decrement reference count; returns the previous value. <br /></td></tr>
+<tr class="separator:a9342a8ac5b372d16daedfd637465d8d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e963aaed2f6181c6001330e6d333dd4" id="r_a4e963aaed2f6181c6001330e6d333dd4"><td class="memItemLeft" align="right" valign="top"><a id="a4e963aaed2f6181c6001330e6d333dd4" name="a4e963aaed2f6181c6001330e6d333dd4"></a>
 __HOST_DEVICE__ void&#160;</td><td class="memItemRight" valign="bottom"><b>inc_dec_size</b> (bool do_inc)</td></tr>
 <tr class="memdesc:a4e963aaed2f6181c6001330e6d333dd4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increment or decrement tracked size. <br /></td></tr>
@@ -489,22 +525,10 @@ Protected Attributes</h2></td></tr>
 <a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#ae44642049dcfe5935dd3b819c1300cbb">pointer</a>&#160;</td><td class="memItemRight" valign="bottom"><b>ptr_</b></td></tr>
 <tr class="memdesc:ab9acc33b558a7e03e4c0c43ffdb02c13"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw managed pointer. <br /></td></tr>
 <tr class="separator:ab9acc33b558a7e03e4c0c43ffdb02c13"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a111d9ed79c4a2d3bc5e71fec5fefb49a" id="r_a111d9ed79c4a2d3bc5e71fec5fefb49a"><td class="memItemLeft" align="right" valign="top"><a id="a111d9ed79c4a2d3bc5e71fec5fefb49a" name="a111d9ed79c4a2d3bc5e71fec5fefb49a"></a>
-<a class="el" href="../../d2/d12/namespaceIvyMemoryHelpers.html#a968c35d9f245459d30fd909562fa38a9">IvyMemoryType</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>mem_type_</b></td></tr>
-<tr class="memdesc:a111d9ed79c4a2d3bc5e71fec5fefb49a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer to the managed memory-domain descriptor. <br /></td></tr>
-<tr class="separator:a111d9ed79c4a2d3bc5e71fec5fefb49a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afced467ffdb9c0a039224c1f71c5d658" id="r_afced467ffdb9c0a039224c1f71c5d658"><td class="memItemLeft" align="right" valign="top"><a id="afced467ffdb9c0a039224c1f71c5d658" name="afced467ffdb9c0a039224c1f71c5d658"></a>
-<a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a977a99923216ca84ac1506dc2da80287">size_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>size_</b></td></tr>
-<tr class="memdesc:afced467ffdb9c0a039224c1f71c5d658"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer to current logical element count. <br /></td></tr>
-<tr class="separator:afced467ffdb9c0a039224c1f71c5d658"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff4070ba4043c05ba1db28b124b3196d" id="r_aff4070ba4043c05ba1db28b124b3196d"><td class="memItemLeft" align="right" valign="top"><a id="aff4070ba4043c05ba1db28b124b3196d" name="aff4070ba4043c05ba1db28b124b3196d"></a>
-<a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a977a99923216ca84ac1506dc2da80287">size_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>capacity_</b></td></tr>
-<tr class="memdesc:aff4070ba4043c05ba1db28b124b3196d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer to current allocated capacity. <br /></td></tr>
-<tr class="separator:aff4070ba4043c05ba1db28b124b3196d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ac6f389e980409eb1381d0d4b8d1ebb" id="r_a0ac6f389e980409eb1381d0d4b8d1ebb"><td class="memItemLeft" align="right" valign="top"><a id="a0ac6f389e980409eb1381d0d4b8d1ebb" name="a0ac6f389e980409eb1381d0d4b8d1ebb"></a>
-<a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a2f9f1fc4748e5082d5e40fb19da2a22d">counter_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>ref_count_</b></td></tr>
-<tr class="memdesc:a0ac6f389e980409eb1381d0d4b8d1ebb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer to shared reference count. <br /></td></tr>
-<tr class="separator:a0ac6f389e980409eb1381d0d4b8d1ebb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa00936f3ec6c0a260261f1294e25ec69" id="r_aa00936f3ec6c0a260261f1294e25ec69"><td class="memItemLeft" align="right" valign="top"><a id="aa00936f3ec6c0a260261f1294e25ec69" name="aa00936f3ec6c0a260261f1294e25ec69"></a>
+<a class="el" href="../../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a676076669641f9478828b05fafb53239">control_block_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>cblock_</b></td></tr>
+<tr class="memdesc:aa00936f3ec6c0a260261f1294e25ec69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Single coalesced control block holding ref count, size, capacity, and memory type. <br /></td></tr>
+<tr class="separator:aa00936f3ec6c0a260261f1294e25ec69"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b030c4f7448b165096ddfbf45b46e3e" id="r_a0b030c4f7448b165096ddfbf45b46e3e"><td class="memItemLeft" align="right" valign="top"><a id="a0b030c4f7448b165096ddfbf45b46e3e" name="a0b030c4f7448b165096ddfbf45b46e3e"></a>
 IvyGPUStream *&#160;</td><td class="memItemRight" valign="bottom"><b>stream_</b></td></tr>
 <tr class="memdesc:a0b030c4f7448b165096ddfbf45b46e3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional stream used for asynchronous memory operations. <br /></td></tr>

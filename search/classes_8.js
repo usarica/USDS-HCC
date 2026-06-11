@@ -79,7 +79,8 @@ var searchData=
   ['ivytensorbase_76',['IvyTensorBase',['../d1/d7d/classIvyMath_1_1IvyTensorBase.html',1,'IvyMath']]],
   ['ivytensorshape_77',['IvyTensorShape',['../d7/dee/classIvyMath_1_1IvyTensorShape.html',1,'IvyMath']]],
   ['ivyunifiedptr_78',['IvyUnifiedPtr',['../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html',1,'std_ivy']]],
-  ['ivyunorderedmap_79',['IvyUnorderedMap',['../d0/d3c/classstd__ivy_1_1IvyUnorderedMap.html',1,'std_ivy']]],
-  ['ivyvariable_80',['IvyVariable',['../d5/db3/classIvyMath_1_1IvyVariable.html',1,'IvyMath']]],
-  ['ivyvector_81',['IvyVector',['../d2/d97/classstd__ivy_1_1IvyVector.html',1,'std_ivy']]]
+  ['ivyunifiedptrcontrolblock_79',['IvyUnifiedPtrControlBlock',['../d7/d76/structstd__ivy_1_1IvyUnifiedPtrControlBlock.html',1,'std_ivy']]],
+  ['ivyunorderedmap_80',['IvyUnorderedMap',['../d0/d3c/classstd__ivy_1_1IvyUnorderedMap.html',1,'std_ivy']]],
+  ['ivyvariable_81',['IvyVariable',['../d5/db3/classIvyMath_1_1IvyVariable.html',1,'IvyMath']]],
+  ['ivyvector_82',['IvyVector',['../d2/d97/classstd__ivy_1_1IvyVector.html',1,'std_ivy']]]
 ];

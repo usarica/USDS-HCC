@@ -1,5 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$da/d66/classstd__ivy_1_1transfer__memory__primitive__with__internal__memory.html" title=" " alt="" coords="5,5,220,89"/>
-<area shape="rect" id="Node000001" href="$d5/db5/classstd__ivy_1_1transfer__memory__primitive_3_01IvyUnorderedMap_3_01Key_00_01T_00_01Hash_00_01K5ea11f2a3295bc2568c21c8fc8910e5e.html" title="Transfer&#45;memory primitive specialization for IvyUnorderedMap." alt="" coords="268,13,487,82"/>
-<area shape="poly" id="edge66_Node000000_Node000001" title=" " alt="" coords="234,45,268,45,268,50,234,50"/>
+<area shape="rect" id="Node000000" href="$da/d66/classstd__ivy_1_1transfer__memory__primitive__with__internal__memory.html" title=" " alt="" coords="5,5,216,75"/>
+<area shape="rect" id="Node000001" href="$d3/d62/classstd__ivy_1_1transfer__memory__primitive_3_01IvyUnifiedPtr_3_01T_00_01IPT_01_4_01_4.html" title="Transfer&#45;memory primitive specialization for IvyUnifiedPtr types." alt="" coords="264,13,453,67"/>
+<area shape="poly" id="edge65_Node000000_Node000001" title=" " alt="" coords="229,37,264,37,264,43,229,43"/>
 </map>

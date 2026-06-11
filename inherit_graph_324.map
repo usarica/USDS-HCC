@@ -1,3 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$d3/def/structstd__ivy_1_1parallel__op__base.html" title="Base policy for grouped parallel operations." alt="" coords="5,5,153,45"/>
+<area shape="rect" id="Node000000" href="$d3/def/structstd__ivy_1_1parallel__op__base.html" title=" " alt="" coords="5,30,184,85"/>
+<area shape="rect" id="Node000001" href="$dc/dea/structstd__ivy_1_1add__parallel__op.html" title="Addition policy for grouped parallel operations." alt="" coords="247,5,403,45"/>
+<area shape="poly" id="edge56_Node000000_Node000001" title=" " alt="" coords="197,40,247,33,248,39,198,46"/>
+<area shape="rect" id="Node000002" href="$d7/d63/structstd__ivy_1_1multiply__parallel__op.html" title="Multiplication policy for grouped parallel operations." alt="" coords="232,69,419,109"/>
+<area shape="poly" id="edge57_Node000000_Node000002" title=" " alt="" coords="198,69,232,74,232,79,197,74"/>
 </map>

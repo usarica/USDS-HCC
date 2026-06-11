@@ -113,10 +113,10 @@ $(document).ready(function() { init_codefold(1); });
 <div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="../../d2/dbe/classIvyBaseStream.html#a22911bd9a729177f9ca496208342f019">   50</a></span>  <span class="keyword">using </span><a class="code hl_typedef" href="../../d2/dbe/classIvyBaseStream.html#a22911bd9a729177f9ca496208342f019">RawEvent_t</a> = <a class="code hl_typedef" href="../../d7/da5/namespaceIvyStreamUtils.html#ab7e73841cf1ae520c9f6a88338e075c5">IvyStreamUtils::StreamEvent_t&lt;RawStream_t&gt;</a>;</div>
 <div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span> </div>
 <div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span><span class="keyword">protected</span>:</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordtype">bool</span> is_owned_;</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> flags_;</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordtype">int</span> priority_;</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <a class="code hl_typedef" href="../../d2/dbe/classIvyBaseStream.html#ab4fd752a1bf8d5fd6031abf1455f5304">RawStream_t</a> stream_;</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>  <span class="keywordtype">bool</span> is_owned_ = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> flags_ = 0;</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  <span class="keywordtype">int</span> priority_ = 0;</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <a class="code hl_typedef" href="../../d2/dbe/classIvyBaseStream.html#ab4fd752a1bf8d5fd6031abf1455f5304">RawStream_t</a> stream_{};</div>
 <div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="keyword">public</span>:</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno"><a class="line" href="../../d2/dbe/classIvyBaseStream.html#a3f5a96151cb02a55fbab280c35af1d9e">   60</a></span>  <a class="code hl_function" href="../../d2/dbe/classIvyBaseStream.html#a3f5a96151cb02a55fbab280c35af1d9e">IvyBaseStream</a>() = <span class="keywordflow">default</span>;</div>

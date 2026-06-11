@@ -1,0 +1,5 @@
+<map id="IvyMemoryHelpers::is_addressable_from_execution" name="IvyMemoryHelpers::is_addressable_from_execution">
+<area shape="rect" id="Node000001" title="Check if memory of type is directly addressable from the current execution space (no cross&#45;domain cop..." alt="" coords="275,5,491,45"/>
+<area shape="rect" id="Node000002" href="$df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a2619289a6d3d0342e9fe2af14ec848b1" title="Whether the control block lives in memory directly addressable from the current execution space." alt="" coords="5,5,227,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="261,28,227,28,227,23,261,23"/>
+</map>

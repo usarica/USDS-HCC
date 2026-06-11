@@ -28,10 +28,11 @@ var searchData=
   ['like_20layer_25',['1) Heterogeneous containers and memory-aware STL-like layer',['../index.html#autotoc_md21',1,'']]],
   ['limitation_26',['8. Disclaimer and Limitation',['../da/d19/md_LICENSE.html#autotoc_md10',1,'']]],
   ['linux_27',['Baseline (Linux)',['../index.html#autotoc_md29',1,'']]],
-  ['log10fcnal_28',['Log10Fcnal',['../dd/da9/structIvyMath_1_1Log10Fcnal.html',1,'IvyMath']]],
-  ['log10fcnal_3c_20t_2c_20complex_5fdomain_5ftag_20_3e_29',['Log10Fcnal&lt; T, complex_domain_tag &gt;',['../d8/df8/structIvyMath_1_1Log10Fcnal_3_01T_00_01complex__domain__tag_01_4.html',1,'IvyMath']]],
-  ['log10fcnal_3c_20t_2c_20real_5fdomain_5ftag_20_3e_30',['Log10Fcnal&lt; T, real_domain_tag &gt;',['../d2/d70/structIvyMath_1_1Log10Fcnal_3_01T_00_01real__domain__tag_01_4.html',1,'IvyMath']]],
-  ['logfcnal_31',['LogFcnal',['../db/d74/structIvyMath_1_1LogFcnal.html',1,'IvyMath']]],
-  ['logfcnal_3c_20t_2c_20complex_5fdomain_5ftag_20_3e_32',['LogFcnal&lt; T, complex_domain_tag &gt;',['../d4/d80/structIvyMath_1_1LogFcnal_3_01T_00_01complex__domain__tag_01_4.html',1,'IvyMath']]],
-  ['logfcnal_3c_20t_2c_20real_5fdomain_5ftag_20_3e_33',['LogFcnal&lt; T, real_domain_tag &gt;',['../dd/d7a/structIvyMath_1_1LogFcnal_3_01T_00_01real__domain__tag_01_4.html',1,'IvyMath']]]
+  ['load_5fcontrol_5fblock_28',['load_control_block',['../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a1853d01e1e0e4796dfc5b75a22d648bb',1,'std_ivy::IvyUnifiedPtr']]],
+  ['log10fcnal_29',['Log10Fcnal',['../dd/da9/structIvyMath_1_1Log10Fcnal.html',1,'IvyMath']]],
+  ['log10fcnal_3c_20t_2c_20complex_5fdomain_5ftag_20_3e_30',['Log10Fcnal&lt; T, complex_domain_tag &gt;',['../d8/df8/structIvyMath_1_1Log10Fcnal_3_01T_00_01complex__domain__tag_01_4.html',1,'IvyMath']]],
+  ['log10fcnal_3c_20t_2c_20real_5fdomain_5ftag_20_3e_31',['Log10Fcnal&lt; T, real_domain_tag &gt;',['../d2/d70/structIvyMath_1_1Log10Fcnal_3_01T_00_01real__domain__tag_01_4.html',1,'IvyMath']]],
+  ['logfcnal_32',['LogFcnal',['../db/d74/structIvyMath_1_1LogFcnal.html',1,'IvyMath']]],
+  ['logfcnal_3c_20t_2c_20complex_5fdomain_5ftag_20_3e_33',['LogFcnal&lt; T, complex_domain_tag &gt;',['../d4/d80/structIvyMath_1_1LogFcnal_3_01T_00_01complex__domain__tag_01_4.html',1,'IvyMath']]],
+  ['logfcnal_3c_20t_2c_20real_5fdomain_5ftag_20_3e_34',['LogFcnal&lt; T, real_domain_tag &gt;',['../dd/d7a/structIvyMath_1_1LogFcnal_3_01T_00_01real__domain__tag_01_4.html',1,'IvyMath']]]
 ];

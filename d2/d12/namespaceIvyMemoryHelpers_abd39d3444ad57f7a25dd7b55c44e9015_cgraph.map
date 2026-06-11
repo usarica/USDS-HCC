@@ -1,0 +1,19 @@
+<map id="IvyMemoryHelpers::is_addressable_from_execution" name="IvyMemoryHelpers::is_addressable_from_execution">
+<area shape="rect" id="Node000001" title="Check if memory of type is directly addressable from the current execution space (no cross&#45;domain cop..." alt="" coords="5,120,221,160"/>
+<area shape="rect" id="Node000002" href="$d2/d12/namespaceIvyMemoryHelpers.html#a725e8fe9b15c51e1897f47a12820a6b8" title="Return default memory domain associated with the current compilation/execution context." alt="" coords="269,5,476,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="152,118,268,62,302,48,304,53,270,66,154,122"/>
+<area shape="rect" id="Node000003" href="$d2/d12/namespaceIvyMemoryHelpers.html#aa3ba0d79acd7a63fba4e7daab00d226f" title="Check if type is GPU device memory." alt="" coords="975,107,1140,147"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="196,117,269,105,364,98,461,94,653,95,825,103,961,114,961,119,825,109,653,100,461,99,364,103,270,111,196,123"/>
+<area shape="rect" id="Node000004" href="$d2/d12/namespaceIvyMemoryHelpers.html#a2a3c543cd9219897d2674e17a63be58c" title="Check if type resides in host&#45;addressable CPU memory." alt="" coords="290,120,455,160"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="222,137,276,137,276,143,222,143"/>
+<area shape="rect" id="Node000005" href="$d2/d12/namespaceIvyMemoryHelpers.html#ac98311832d01eb8d1357265dd95db4eb" title="Check if type is any unified&#45;memory variant." alt="" coords="975,213,1140,253"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="139,158,196,199,232,219,270,233,363,255,458,268,555,274,649,275,823,265,961,248,961,253,824,270,649,280,554,280,458,273,362,260,269,239,230,224,193,204,136,162"/>
+<area shape="rect" id="Node000006" href="$d2/d12/namespaceIvyMemoryHelpers.html#a267a2ac7e1e887a5b18e5cc801825204" title="Check if operations on type should run on host execution resources." alt="" coords="284,184,461,224"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="196,157,279,178,277,183,195,163"/>
+<area shape="rect" id="Node000007" href="$d2/d12/namespaceIvyMemoryHelpers.html#af7f504c8e6240385fdf2c47448a20965" title="Check if operations on type should run on any accelerator backend." alt="" coords="524,184,701,224"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="461,201,510,201,510,207,461,207"/>
+<area shape="rect" id="Node000008" href="$d2/d12/namespaceIvyMemoryHelpers.html#a325d02345e7a58363de443d83056e5df" title="Check if operations on type should run on GPU execution resources." alt="" coords="749,184,927,224"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="701,201,736,201,736,207,701,207"/>
+<area shape="poly" id="edge8_Node000008_Node000003" title=" " alt="" coords="895,181,986,149,988,154,897,186"/>
+<area shape="poly" id="edge9_Node000008_Node000005" title=" " alt="" coords="927,213,962,218,961,223,926,218"/>
+</map>

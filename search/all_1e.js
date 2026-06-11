@@ -7,5 +7,6 @@ var searchData=
   ['with_20applicable_20law_4',['7. Compliance With Applicable Law',['../da/d19/md_LICENSE.html#autotoc_md9',1,'']]],
   ['with_20cuda_20enabled_5',['4) Build with CUDA enabled',['../index.html#autotoc_md38',1,'']]],
   ['without_20written_20authorization_6',['4. Prohibited Acts Without Written Authorization',['../da/d19/md_LICENSE.html#autotoc_md6',1,'']]],
-  ['written_20authorization_7',['4. Prohibited Acts Without Written Authorization',['../da/d19/md_LICENSE.html#autotoc_md6',1,'']]]
+  ['write_5fmeta_5ffield_7',['write_meta_field',['../df/d8d/classstd__ivy_1_1IvyUnifiedPtr.html#a6532682a404c63984c7c7b9c9c60ebeb',1,'std_ivy::IvyUnifiedPtr']]],
+  ['written_20authorization_8',['4. Prohibited Acts Without Written Authorization',['../da/d19/md_LICENSE.html#autotoc_md6',1,'']]]
 ];

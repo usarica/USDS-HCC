@@ -127,12 +127,8 @@ __HOST_DEVICE__ void&#160;</td><td class="memItemRight" valign="bottom"><b>updat
 <tr class="memitem:a1cc0ff9a88ff3edbed4136b4784d4d9e" id="r_a1cc0ff9a88ff3edbed4136b4784d4d9e"><td class="memItemLeft" align="right" valign="top"><a id="a1cc0ff9a88ff3edbed4136b4784d4d9e" name="a1cc0ff9a88ff3edbed4136b4784d4d9e"></a>
 __HOST_DEVICE__ data_container const &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>get_clients</b> () const</td></tr>
 <tr class="separator:a1cc0ff9a88ff3edbed4136b4784d4d9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04a03f62ee872e6fdeca9fc650065482" id="r_a04a03f62ee872e6fdeca9fc650065482"><td class="memItemLeft" align="right" valign="top"><a id="a04a03f62ee872e6fdeca9fc650065482" name="a04a03f62ee872e6fdeca9fc650065482"></a>
-__HOST_DEVICE__ data_container *&#160;</td><td class="memItemRight" valign="bottom"><b>clone_clients_and_release</b> ()</td></tr>
-<tr class="separator:a04a03f62ee872e6fdeca9fc650065482"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac1514f9f3005294b9731adfafa439445" id="r_ac1514f9f3005294b9731adfafa439445"><td class="memItemLeft" align="right" valign="top"><a id="ac1514f9f3005294b9731adfafa439445" name="ac1514f9f3005294b9731adfafa439445"></a>
-__HOST_DEVICE__ void&#160;</td><td class="memItemRight" valign="bottom"><b>restore_clients_and_reabsorb</b> (data_container *&amp;clients_bkp)</td></tr>
-<tr class="separator:ac1514f9f3005294b9731adfafa439445"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a223cd64df08062d10f7fbaf82fcb5863" id="r_a223cd64df08062d10f7fbaf82fcb5863"><td class="memItemLeft" align="right" valign="top">__HOST_DEVICE__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d5f/classIvyMath_1_1IvyClientManager.html#a223cd64df08062d10f7fbaf82fcb5863">detach_aliased_clients</a> ()</td></tr>
+<tr class="separator:a223cd64df08062d10f7fbaf82fcb5863"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -152,6 +148,47 @@ Friends</h2></td></tr>
 class&#160;</td><td class="memItemRight" valign="bottom"><b>std_mem::kernel_generic_transfer_internal_memory&lt; origin_t, origin_t &gt;</b></td></tr>
 <tr class="separator:ad26362bc6bfb5ccb1218a79a80558b7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a223cd64df08062d10f7fbaf82fcb5863" name="a223cd64df08062d10f7fbaf82fcb5863"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a223cd64df08062d10f7fbaf82fcb5863">&#9670;&#160;</a></span>detach_aliased_clients()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__HOST_DEVICE__ void <a class="el" href="../../df/d5f/classIvyMath_1_1IvyClientManager.html">IvyMath::IvyClientManager</a>&lt; T &gt;::detach_aliased_clients </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>detach_aliased_clients: Re-initialize this object's client container after a shallow (bitwise) copy so that it is an independently owned, empty container.</p>
+<p>A shallow transfer (memcpy) of an <a class="el" href="../../df/d5f/classIvyMath_1_1IvyClientManager.html">IvyClientManager</a> leaves clients_ bitwise-aliasing the source's container buffer. Deep-copying that container would (a) recurse through the client back-references, re-entering the owning node and forming a copy cycle, and (b) make the copy and the source share/free the same buffer. Re-initializing the copy's clients_ as empty here breaks the cycle and gives the copy its own container. The aliased buffer is abandoned rather than freed because it is owned by the source.</p>
+<p>This operates exclusively on the freshly-copied target; the source is never mutated, so the operation is safe to run concurrently (e.g. from OpenMP-parallelized element transfers) even when many targets are copied from the same shared source object. </p>
+<div class="dynheader">
+Here is the call graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="../../df/d5f/classIvyMath_1_1IvyClientManager_a223cd64df08062d10f7fbaf82fcb5863_cgraph.png" border="0" usemap="#adf/d5f/classIvyMath_1_1IvyClientManager_a223cd64df08062d10f7fbaf82fcb5863_cgraph" alt=""/></div>
+<map name="adf/d5f/classIvyMath_1_1IvyClientManager_a223cd64df08062d10f7fbaf82fcb5863_cgraph" id="adf/d5f/classIvyMath_1_1IvyClientManager_a223cd64df08062d10f7fbaf82fcb5863_cgraph">
+<area shape="rect" title=" " alt="" coords="5,5,204,45"/>
+<area shape="rect" href="../../d2/d12/namespaceIvyMemoryHelpers.html#a725e8fe9b15c51e1897f47a12820a6b8" title="Return default memory domain associated with the current compilation/execution context." alt="" coords="252,5,459,45"/>
+<area shape="poly" title=" " alt="" coords="204,23,238,23,238,28,204,28"/>
+</map>
+</div>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li><a class="el" href="../../da/d90/IvyClientManager_8h_source.html">IvyClientManager.h</a></li>
 </ul>

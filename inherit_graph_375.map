@@ -1,9 +1,13 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" title=" " alt="" coords="5,128,164,153"/>
-<area shape="rect" id="Node000001" href="$d7/d06/structIvyMath_1_1is__pointer_3_01IvyThreadSafePtr__t_3_01T_01_4_01_4.html" title=" " alt="" coords="265,5,427,60"/>
-<area shape="poly" id="edge77_Node000000_Node000001" title=" " alt="" coords="116,119,160,93,211,69,264,50,266,55,213,74,163,98,119,123"/>
-<area shape="rect" id="Node000002" href="$d4/d81/structstd__ivy_1_1is__contiguous__iterator_3_01T_00_01std__ttraits_1_1enable__if__t_3_01__iterat010617f8fe9928c575c8bb18f27fb29b.html" title="Positive contiguous&#45;iterator trait specialization." alt="" coords="212,84,480,197"/>
-<area shape="poly" id="edge78_Node000000_Node000002" title=" " alt="" coords="178,138,212,138,212,143,178,143"/>
-<area shape="rect" id="Node000003" href="$dd/ddb/structstd__ivy_1_1stashing__iterator_3_01T_00_01std__ttraits_1_1void__t_3_01typename_01T_1_1stashing__iterator__tag_01_4_01_4.html" title="Positive specialization of stashing_iterator when marker tag exists." alt="" coords="230,222,462,291"/>
-<area shape="poly" id="edge79_Node000000_Node000003" title=" " alt="" coords="120,158,213,206,245,219,243,224,211,211,118,163"/>
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,119,152,159"/>
+<area shape="rect" id="Node000001" href="$d3/dc4/structIvyTypes_1_1type__rank.html" title="Compile&#45;time rank assignment for scalar and templated types." alt="" coords="200,5,391,31"/>
+<area shape="poly" id="edge72_Node000000_Node000001" title=" " alt="" coords="108,108,149,73,199,41,231,28,233,33,201,46,152,77,111,112"/>
+<area shape="rect" id="Node000002" href="$d5/d30/structIvyTypes_1_1type__rank_3_01T_3_01U_00_01Args_8_8_8_01_4_01_4.html" title=" " alt="" coords="219,55,371,95"/>
+<area shape="poly" id="edge73_Node000000_Node000002" title=" " alt="" coords="159,113,226,93,228,98,161,118"/>
+<area shape="rect" id="Node000003" href="$d8/dd3/structIvyTypes_1_1type__rank__sum.html" title="Sum of ranks for two types." alt="" coords="219,119,371,159"/>
+<area shape="poly" id="edge74_Node000000_Node000003" title=" " alt="" coords="166,137,219,137,219,142,166,142"/>
+<area shape="rect" id="Node000004" href="$dc/d17/structIvyTypes_1_1type__rank__sum_3_01T_00_01type__rank__sum_3_01U_00_01S_01_4_01_4.html" title=" " alt="" coords="201,184,389,239"/>
+<area shape="poly" id="edge75_Node000000_Node000004" title=" " alt="" coords="154,161,214,181,212,187,152,166"/>
+<area shape="rect" id="Node000005" href="$dc/d91/structIvyTypes_1_1type__rank__sum_3_01type__rank__sum_3_01T_00_01U_01_4_00_01S_01_4.html" title=" " alt="" coords="209,263,381,317"/>
+<area shape="poly" id="edge76_Node000000_Node000005" title=" " alt="" coords="109,168,151,209,201,248,224,260,221,265,199,252,147,213,106,172"/>
 </map>
