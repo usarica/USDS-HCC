@@ -31,7 +31,7 @@ namespace IvyMath{
   __HOST__ IvyThreadSafePtr_t<typename IvyRegularFunction_1D<T, Evaluator, precision_type, Domain, GradientDomain>::grad_t> IvyRegularFunction_1D<T, Evaluator, precision_type, Domain, GradientDomain>::gradient(
     IvyThreadSafePtr_t<IvyBaseNode> const& var
   ) const{
-    auto grad_dep = function_gradient<T, Evaluator>::get(*dep, var);
+    auto grad_dep = function_gradient<T>::get(*dep, var);
     return evaluator_t::gradient(dep)*grad_dep;
   }
 
