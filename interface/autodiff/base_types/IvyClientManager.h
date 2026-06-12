@@ -30,14 +30,21 @@ namespace IvyMath{
     protected:
       data_container clients_;
 
-    __HOST_DEVICE__ bool transfer_internal_memory(std_ivy::IvyMemoryType const& new_mem_type, bool release_old){
+    __HOST_DEVICE__ bool transfer_internal_memory(std_ivy::IvyMemoryType const& new_mem_type, bool /*release_old*/){
       bool res = true;
       constexpr auto def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
       auto stream = clients_.gpu_stream();
       operate_with_GPU_stream_from_pointer(
         stream, ref_stream,
         __ENCAPSULATE__(
-          res &= allocator_data_container::transfer_internal_memory(&clients_, 1, def_mem_type, new_mem_type, ref_stream, release_old);
+          // The client container is always an independently-owned, freshly-built container by the
+          // time its internal memory is transferred: the copy path (see the transfer() specialization
+          // below) replaces the bitwise-aliased container with a detached one via
+          // detach_aliased_clients() before this runs. It therefore never aliases the source, so the
+          // transfer must release the container's own previous buffers. Forwarding release_old=false
+          // here (the value used to preserve aliased source pointers for genuinely shared members)
+          // would copy and orphan the detached container's iterator-builder storage, leaking it.
+          res &= allocator_data_container::transfer_internal_memory(&clients_, 1, def_mem_type, new_mem_type, ref_stream, true);
         )
       );
       return res;
