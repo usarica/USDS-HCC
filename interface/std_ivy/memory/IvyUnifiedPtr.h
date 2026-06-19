@@ -48,6 +48,85 @@ namespace std_ivy{
   }
 #endif
 
+  namespace detail{
+    /**
+     * @brief Atomically increment/decrement a control block's weak_count; returns the previous value.
+     * Mirrors IvyUnifiedPtr::inc_dec_counter's addressable/non-addressable strategy for weak_count,
+     * usable by both IvyUnifiedPtr (release) and IvyWeakPtr.
+     */
+    __INLINE_FCN_RELAXED__ __HOST_DEVICE__ IvyTypes::size_t inc_dec_cblock_weak(
+      IvyUnifiedPtrControlBlock* cblock, IvyMemoryType exec_mem_type, IvyGPUStream* stream, bool do_inc
+    ){
+      using counter_t = IvyTypes::size_t;
+      constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+      if (IvyMemoryHelpers::is_addressable_from_execution(exec_mem_type)){
+        std_atomic::atomic_ref<counter_t> a(cblock->weak_count);
+        if (do_inc) return a.fetch_add(__STATIC_CAST__(counter_t, 1), std_atomic::memory_order_relaxed);
+        else return a.fetch_sub(__STATIC_CAST__(counter_t, 1), std_atomic::memory_order_acq_rel);
+      }
+      else{
+#if DEVICE_CODE == DEVICE_CODE_HOST
+        std_atomic::atomic_flag& lk = nonaddressable_refcount_lock(&cblock->weak_count);
+        while (lk.test_and_set(std_atomic::memory_order_acquire)){ ::std::this_thread::yield(); }
+#endif
+        counter_t prev{};
+        counter_t* p_prev = &prev;
+        counter_t* p_field = &cblock->weak_count;
+        operate_with_GPU_stream_from_pointer(stream, ref_stream, __ENCAPSULATE__(
+          std_ivy::allocator_traits<std_ivy::allocator<counter_t>>::transfer(p_prev, p_field, 1, def_mem_type, exec_mem_type, ref_stream);
+          counter_t next = do_inc ? (prev + 1) : (prev - 1);
+          counter_t* p_next = &next;
+          std_ivy::allocator_traits<std_ivy::allocator<counter_t>>::transfer(p_field, p_next, 1, exec_mem_type, def_mem_type, ref_stream);
+        ));
+#if DEVICE_CODE == DEVICE_CODE_HOST
+        lk.clear(std_atomic::memory_order_release);
+#endif
+        return prev;
+      }
+    }
+
+    /**
+     * @brief Atomically increment a control block's ref_count iff it is currently non-zero.
+     * @return True if the strong count was alive and has been incremented (used by IvyWeakPtr::lock).
+     */
+    __INLINE_FCN_RELAXED__ __HOST_DEVICE__ bool try_strong_inc(
+      IvyUnifiedPtrControlBlock* cblock, IvyMemoryType exec_mem_type, IvyGPUStream* stream
+    ){
+      using counter_t = IvyTypes::size_t;
+      constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+      if (IvyMemoryHelpers::is_addressable_from_execution(exec_mem_type)){
+        std_atomic::atomic_ref<counter_t> a(cblock->ref_count);
+        counter_t c = a.load(std_atomic::memory_order_acquire);
+        while (c != 0){
+          if (a.compare_exchange_weak(c, c + 1, std_atomic::memory_order_acq_rel, std_atomic::memory_order_relaxed)) return true;
+        }
+        return false;
+      }
+      else{
+#if DEVICE_CODE == DEVICE_CODE_HOST
+        std_atomic::atomic_flag& lk = nonaddressable_refcount_lock(cblock);
+        while (lk.test_and_set(std_atomic::memory_order_acquire)){ ::std::this_thread::yield(); }
+#endif
+        counter_t prev{};
+        counter_t* p_prev = &prev;
+        counter_t* p_field = &cblock->ref_count;
+        operate_with_GPU_stream_from_pointer(stream, ref_stream, __ENCAPSULATE__(
+          std_ivy::allocator_traits<std_ivy::allocator<counter_t>>::transfer(p_prev, p_field, 1, def_mem_type, exec_mem_type, ref_stream);
+          if (prev != 0){
+            counter_t next = prev + 1;
+            counter_t* p_next = &next;
+            std_ivy::allocator_traits<std_ivy::allocator<counter_t>>::transfer(p_field, p_next, 1, exec_mem_type, def_mem_type, ref_stream);
+          }
+        ));
+        bool const ok = (prev != 0);
+#if DEVICE_CODE == DEVICE_CODE_HOST
+        lk.clear(std_atomic::memory_order_release);
+#endif
+        return ok;
+      }
+    }
+  }
+
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(IvyGPUStream* stream) :
     ptr_(nullptr),
     cblock_(nullptr),
@@ -169,6 +248,13 @@ namespace std_ivy{
     other.check_write_access_or_die();
     other.dump();
   }
+  template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::IvyUnifiedPtr(alias_from_weak_t, pointer ptr, control_block_type* cblock, IvyGPUStream* stream, IvyMemoryType exec_mem_type) :
+    ptr_(ptr),
+    cblock_(cblock),
+    stream_(stream),
+    exec_mem_type_(exec_mem_type),
+    progenitor_mem_type_(exec_mem_type)
+  {}
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::~IvyUnifiedPtr(){ this->reset(); }
 
   template<typename T, IvyPointerType IPT>
@@ -249,7 +335,7 @@ namespace std_ivy{
       assert(false);
       return;
     }
-    control_block_type cb{ __STATIC_CAST__(counter_type, 1), n_size, n_capacity, mem_type };
+    control_block_type cb{ __STATIC_CAST__(counter_type, 1), n_size, n_capacity, mem_type, __STATIC_CAST__(counter_type, 1) };
     this->store_control_block(cb);
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ void IvyUnifiedPtr<T, IPT>::release(){
@@ -263,6 +349,7 @@ namespace std_ivy{
         if (this->check_write_access()){
           // Sole owner: snapshot the whole control block once (no concurrent refcount activity).
           control_block_type const cb = this->load_control_block();
+          // Destroy the managed object now that no strong owners remain.
           operate_with_GPU_stream_from_pointer(
             stream_, ref_stream,
             __ENCAPSULATE__(
@@ -270,9 +357,19 @@ namespace std_ivy{
                 element_allocator_traits::destruct(ptr_, cb.size, cb.mem_type, ref_stream);
                 element_allocator_traits::deallocate(ptr_, cb.capacity, cb.mem_type, ref_stream);
               }
-              control_block_allocator_traits::destroy(cblock_, 1, exec_mem_type_, ref_stream);
             )
           );
+          // Strong owners collectively held one weak reference; drop it now that the object is
+          // destroyed. The control block is freed only once no IvyWeakPtr observers remain either.
+          auto const prev_weak = detail::inc_dec_cblock_weak(cblock_, exec_mem_type_, stream_, false);
+          if (prev_weak==1){
+            operate_with_GPU_stream_from_pointer(
+              stream_, ref_stream,
+              __ENCAPSULATE__(
+                control_block_allocator_traits::destroy(cblock_, 1, exec_mem_type_, ref_stream);
+              )
+            );
+          }
         }
         else{
           __PRINT_ERROR__("IvyUnifiedPtr::release: No write access to clean object at %p.\n", this);
@@ -330,7 +427,7 @@ namespace std_ivy{
   }
   template<typename T, IvyPointerType IPT> __HOST_DEVICE__ IvyUnifiedPtr<T, IPT>::control_block_type IvyUnifiedPtr<T, IPT>::load_control_block() const{
     constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-    control_block_type cb{ __STATIC_CAST__(counter_type, 0), __STATIC_CAST__(size_type, 0), __STATIC_CAST__(size_type, 0), def_mem_type };
+    control_block_type cb{ __STATIC_CAST__(counter_type, 0), __STATIC_CAST__(size_type, 0), __STATIC_CAST__(size_type, 0), def_mem_type, __STATIC_CAST__(counter_type, 0) };
     if (!cblock_) return cb;
     if (this->control_block_is_addressable()) return *cblock_;
     control_block_type* p_cb = &cb;
@@ -506,7 +603,7 @@ namespace std_ivy{
         ptr_ = new_ptr_;
         cblock_ = new_cblock_;
         // Populate the freshly allocated control block (refcount starts at 1 for the new owner).
-        control_block_type const cb{ __STATIC_CAST__(counter_type, 1), n_size, n_capacity, new_mem_type };
+        control_block_type const cb{ __STATIC_CAST__(counter_type, 1), n_size, n_capacity, new_mem_type, __STATIC_CAST__(counter_type, 1) };
         this->store_control_block(cb);
       }
     }
@@ -532,7 +629,7 @@ namespace std_ivy{
           res &= (cblock_ != nullptr);
         )
       );
-      control_block_type const cb{ __STATIC_CAST__(counter_type, 1), n, n, mem_type };
+      control_block_type const cb{ __STATIC_CAST__(counter_type, 1), n, n, mem_type, __STATIC_CAST__(counter_type, 1) };
       this->store_control_block(cb);
     }
     return res;
@@ -1015,6 +1112,117 @@ namespace std_ivy{
       }
       if (s>1) __PRINT_INFO__(" }");
     }
+  };
+
+  /**
+   * @brief Non-owning weak reference to an object managed by a shared IvyUnifiedPtr.
+   *
+   * Observes a shared owner's control block without contributing to the strong @c ref_count, so it
+   * does not keep the managed object alive; it keeps the control block alive (via @c weak_count) so
+   * expiry can be detected safely. Call @ref lock() to obtain a @c shared_ptr if the object is alive.
+   * This breaks ownership cycles (e.g. an autodiff node holding a back-reference to a client that
+   * also owns the node) without leaking.
+   */
+  template<typename T> class IvyWeakPtr{
+  public:
+    typedef T element_type;
+    typedef IvyUnifiedPtrControlBlock control_block_type;
+    typedef IvyTypes::size_t counter_type;
+    typedef std_ivy::allocator<control_block_type> control_block_allocator_type;
+    typedef std_ivy::allocator_traits<control_block_allocator_type> control_block_allocator_traits;
+
+  protected:
+    T* ptr_;
+    control_block_type* cblock_;
+    IvyGPUStream* stream_;
+    IvyMemoryType exec_mem_type_;
+
+    __HOST_DEVICE__ void release_weak(){
+      if (cblock_){
+        auto const prev_weak = detail::inc_dec_cblock_weak(cblock_, exec_mem_type_, stream_, false);
+        if (prev_weak==1){
+          operate_with_GPU_stream_from_pointer(stream_, ref_stream, __ENCAPSULATE__(
+            control_block_allocator_traits::destroy(cblock_, 1, exec_mem_type_, ref_stream);
+          ));
+        }
+      }
+    }
+    __HOST_DEVICE__ void dump(){
+      ptr_ = nullptr; cblock_ = nullptr; stream_ = nullptr;
+      exec_mem_type_ = IvyMemoryHelpers::get_execution_default_memory();
+    }
+
+  public:
+    __HOST_DEVICE__ IvyWeakPtr() : ptr_(nullptr), cblock_(nullptr), stream_(nullptr), exec_mem_type_(IvyMemoryHelpers::get_execution_default_memory()){}
+
+    /** @brief Observe a shared owner without extending the object's lifetime. */
+    template<typename U, ENABLE_IF_BOOL((IS_BASE_OF(T, U) || IS_BASE_OF(U, T)))>
+    __HOST_DEVICE__ IvyWeakPtr(IvyUnifiedPtr<U, IvyPointerType::shared> const& sp) :
+      ptr_(__STATIC_CAST__(T*, sp.get())),
+      cblock_(sp.control_block()),
+      stream_(sp.gpu_stream()),
+      exec_mem_type_(sp.get_exec_memory_type())
+    {
+      if (cblock_) detail::inc_dec_cblock_weak(cblock_, exec_mem_type_, stream_, true);
+    }
+
+    __HOST_DEVICE__ IvyWeakPtr(IvyWeakPtr const& other) :
+      ptr_(other.ptr_), cblock_(other.cblock_), stream_(other.stream_), exec_mem_type_(other.exec_mem_type_)
+    {
+      if (cblock_) detail::inc_dec_cblock_weak(cblock_, exec_mem_type_, stream_, true);
+    }
+    __HOST_DEVICE__ IvyWeakPtr(IvyWeakPtr&& other) :
+      ptr_(other.ptr_), cblock_(other.cblock_), stream_(other.stream_), exec_mem_type_(other.exec_mem_type_)
+    { other.dump(); }
+
+    __HOST_DEVICE__ ~IvyWeakPtr(){ this->release_weak(); }
+
+    __HOST_DEVICE__ IvyWeakPtr& operator=(IvyWeakPtr const& other){
+      if (this != &other){
+        this->release_weak();
+        ptr_ = other.ptr_; cblock_ = other.cblock_; stream_ = other.stream_; exec_mem_type_ = other.exec_mem_type_;
+        if (cblock_) detail::inc_dec_cblock_weak(cblock_, exec_mem_type_, stream_, true);
+      }
+      return *this;
+    }
+    __HOST_DEVICE__ IvyWeakPtr& operator=(IvyWeakPtr&& other){
+      if (this != &other){
+        this->release_weak();
+        ptr_ = other.ptr_; cblock_ = other.cblock_; stream_ = other.stream_; exec_mem_type_ = other.exec_mem_type_;
+        other.dump();
+      }
+      return *this;
+    }
+
+    /** @brief Strong reference count of the observed object (0 once expired). */
+    __HOST_DEVICE__ counter_type use_count() const{
+      if (!cblock_) return 0;
+      if (IvyMemoryHelpers::is_addressable_from_execution(exec_mem_type_))
+        return std_atomic::atomic_ref<counter_type>(cblock_->ref_count).load(std_atomic::memory_order_acquire);
+      constexpr IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+      counter_type prev{}; counter_type* p_prev = &prev; counter_type* p_field = &cblock_->ref_count;
+      operate_with_GPU_stream_from_pointer(stream_, ref_stream, __ENCAPSULATE__(
+        std_ivy::allocator_traits<std_ivy::allocator<counter_type>>::transfer(p_prev, p_field, 1, def_mem_type, exec_mem_type_, ref_stream);
+      ));
+      return prev;
+    }
+    /** @brief True once the observed object has been destroyed. */
+    __HOST_DEVICE__ bool expired() const{ return this->use_count()==0; }
+
+    /** @brief Obtain a shared owner if the object is still alive; otherwise an empty shared_ptr. */
+    __HOST_DEVICE__ shared_ptr<T> lock() const{
+      if (cblock_ && detail::try_strong_inc(cblock_, exec_mem_type_, stream_))
+        return shared_ptr<T>(typename shared_ptr<T>::alias_from_weak_t{}, ptr_, cblock_, stream_, exec_mem_type_);
+      return shared_ptr<T>();
+    }
+
+    /** @brief Drop this weak reference and detach. */
+    __HOST_DEVICE__ void reset(){ this->release_weak(); this->dump(); }
+    /** @brief Raw observed pointer (may dangle if expired; use lock() for safe access). */
+    __HOST_DEVICE__ T* unsafe_get() const{ return ptr_; }
+    /** @brief Underlying control block pointer (for identity comparisons). */
+    __HOST_DEVICE__ control_block_type* control_block() const{ return cblock_; }
+
   };
 }
 namespace std_util{

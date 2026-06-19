@@ -33,7 +33,10 @@ namespace IvyMath{
     public:
       typedef T origin_t;
       typedef IvyBaseModifiable client_t;
-      typedef std_mem::shared_ptr<client_t> client_ptr_t;
+      // Client back-references are weak: a node observes its clients (the parents that depend on
+      // it) without owning them. This breaks the ownership cycle (parent owns child via a strong
+      // dependency, child observes parent here) that would otherwise leak the whole graph.
+      typedef std_mem::weak_ptr<client_t> client_ptr_t;
       typedef std_vec::vector<client_ptr_t> data_container;
       using allocator_data_container = std_mem::allocator<data_container>;
 
@@ -42,27 +45,22 @@ namespace IvyMath{
     protected:
       data_container clients_;
 
-    __HOST_DEVICE__ bool transfer_internal_memory(std_ivy::IvyMemoryType const& new_mem_type, bool release_old){
-      bool res = true;
-      constexpr auto def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-      auto stream = clients_.gpu_stream();
-      operate_with_GPU_stream_from_pointer(
-        stream, ref_stream,
-        __ENCAPSULATE__(
-          res &= allocator_data_container::transfer_internal_memory(&clients_, 1, def_mem_type, new_mem_type, ref_stream, release_old);
-        )
-      );
-      return res;
+    __HOST_DEVICE__ bool transfer_internal_memory(std_ivy::IvyMemoryType const& /*new_mem_type*/, bool /*release_old*/){
+      // A relocated node has no dependents; leave the (empty-after-relocation) client list alone.
+      return true;
     }
 
     public:
       __HOST_DEVICE__ IvyClientManager() : clients_(){}
-      __HOST_DEVICE__ IvyClientManager(IvyClientManager const& other) : clients_(other.clients_){}
+      // A copied node is a distinct object that nothing depends on yet, so it starts with an empty
+      // client list. Copying the source's weak back-references would alias control blocks (and is
+      // semantically wrong: clients depend on the original node, not the copy).
+      __HOST_DEVICE__ IvyClientManager(IvyClientManager const& /*other*/) : clients_(){}
       __HOST_DEVICE__ IvyClientManager(IvyClientManager&& other) : clients_(std_util::move(other.clients_)){}
       __HOST_DEVICE__ ~IvyClientManager(){}
 
-      __HOST_DEVICE__ IvyClientManager& operator=(IvyClientManager const& other){
-        if (this != &other) clients_ = other.clients_;
+      __HOST_DEVICE__ IvyClientManager& operator=(IvyClientManager const& /*other*/){
+        // The set of dependents is a property of node identity, not value; leave clients_ untouched.
         return *this;
       }
       __HOST_DEVICE__ IvyClientManager& operator=(IvyClientManager&& other){
@@ -73,13 +71,18 @@ namespace IvyMath{
       template<typename U, ENABLE_IF_BASE_OF(client_t, U)>
       __HOST_DEVICE__ bool add_client(std_mem::shared_ptr<U> const& client){
         client_ptr_t base_ptr(client);
-        auto it_end = clients_.end();
-        if (std_algo::find(clients_.begin(), it_end, base_ptr) != it_end) return false;
+        auto* cb = base_ptr.control_block();
+        // Deduplicate by control-block identity (weak references have no value equality).
+        for (auto const& existing : clients_){ if (existing.control_block() == cb) return false; }
         clients_.push_back(base_ptr);
         return true;
       }
       __HOST_DEVICE__ void update_clients_modified() const{
-        for (auto const& client : clients_) client->set_modified(true);
+        // Clients are observed weakly; lock each one and skip any that have already expired.
+        for (auto const& client : clients_){
+          auto sc = client.lock();
+          if (sc) sc->set_modified(true);
+        }
       }
 
       __HOST_DEVICE__ data_container const& get_clients() const{ return clients_; }

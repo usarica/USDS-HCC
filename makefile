@@ -312,10 +312,12 @@ SANTESTEXEDIR = $(COMPILEPATH)test_executables_san/
 ASAN_FLAGS    = -fsanitize=address,undefined -fno-omit-frame-pointer
 TSAN_FLAGS    = -fsanitize=thread -fno-omit-frame-pointer
 
-# The autodiff unit test is out of scope for the memory/thread sanitizer gates:
-# it has pre-existing leaks under ASan that are unrelated to core STL/memory code.
-SANTESTSCC    = $(filter-out %utest_autodiff_basic_blocks.cc, $(TESTSCC))
-VGTESTEXES    = $(filter-out %utest_autodiff_basic_blocks, $(TESTEXES))
+# All unit tests (including the autodiff tests) are leak-clean under ASan: the autodiff
+# reference-cycle leak was fixed by making ~IvyFunction virtual and using weak client
+# back-references, and the tensor transfer double-free was fixed by registering
+# IvyTensorShape for deep (internal-memory) transfer. The full set is therefore gated.
+SANTESTSCC    = $(TESTSCC)
+VGTESTEXES    = $(TESTEXES)
 # ThreadSanitizer is gated on the std::thread-based regression tests only.
 # TSan cannot observe libgomp's internal synchronization, so it reports false
 # races inside OpenMP runtime code (reductions/barriers) for the OpenMP-based

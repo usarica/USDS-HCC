@@ -37,7 +37,7 @@ namespace std_ivy{
    * compatible IvyUnifiedPtr specializations (different element types) share the same block.
    */
   struct IvyUnifiedPtrControlBlock{
-    /** @brief Shared reference count. */
+    /** @brief Shared (strong) reference count. */
     IvyTypes::size_t ref_count;
     /** @brief Current logical element count. */
     IvyTypes::size_t size;
@@ -45,10 +45,23 @@ namespace std_ivy{
     IvyTypes::size_t capacity;
     /** @brief Memory domain of the managed storage. */
     IvyMemoryType mem_type;
+    /**
+     * @brief Weak reference count.
+     *
+     * Counts the number of @c IvyWeakPtr owners plus one extra unit while any
+     * strong owner exists (the libstdc++ model where strong owners collectively
+     * hold a single weak reference). The managed object is destroyed when
+     * @c ref_count reaches zero; the control block itself is freed only when
+     * @c weak_count also reaches zero. New control blocks start with
+     * @c weak_count = 1 to represent the initial strong owner group.
+     */
+    IvyTypes::size_t weak_count;
   };
 
   /** @brief Forward declaration of the unified smart pointer template. */
   template<typename T, IvyPointerType IPT> class IvyUnifiedPtr;
+  /** @brief Forward declaration of the non-owning weak pointer template. */
+  template<typename T> class IvyWeakPtr;
   /** @brief Transfer-memory primitive specialization for IvyUnifiedPtr types. */
   template<typename T, IvyPointerType IPT> class transfer_memory_primitive<IvyUnifiedPtr<T, IPT>> : public transfer_memory_primitive_with_internal_memory<IvyUnifiedPtr<T, IPT>>{};
 
@@ -100,6 +113,8 @@ namespace std_ivy{
 
     friend class kernel_generic_transfer_internal_memory<IvyUnifiedPtr<T, IPT>>;
     friend class IvySecrets::dump_helper;
+    /** @brief Weak pointers may alias this owner's control block (see IvyWeakPtr::lock). */
+    template<typename U> friend class IvyWeakPtr;
 
   protected:
     /** @brief Raw managed pointer. */
@@ -149,6 +164,17 @@ namespace std_ivy{
     If release_old is true, the old pointers are released.
     */
     __HOST_DEVICE__ bool transfer_impl(IvyMemoryType const& new_mem_type, bool transfer_all, bool copy_ptr, bool release_old);
+
+    /** @brief Tag type selecting the weak-lock aliasing constructor. */
+    struct alias_from_weak_t{};
+    /**
+     * @brief Construct a shared owner aliasing an existing control block.
+     *
+     * Used exclusively by @c IvyWeakPtr::lock(), which has already atomically
+     * incremented @c ref_count. This constructor therefore adopts the existing
+     * count without incrementing it again.
+     */
+    __HOST_DEVICE__ IvyUnifiedPtr(alias_from_weak_t, pointer ptr, control_block_type* cblock, IvyGPUStream* stream, IvyMemoryType exec_mem_type);
 
   public:
     /** @brief Default constructor producing an empty pointer wrapper. */
@@ -322,6 +348,8 @@ namespace std_ivy{
   template<typename T> using shared_ptr = IvyUnifiedPtr<T, IvyPointerType::shared>;
   /** @brief Unique-ownership IvyUnifiedPtr alias. */
   template<typename T> using unique_ptr = IvyUnifiedPtr<T, IvyPointerType::unique>;
+  /** @brief Non-owning weak pointer alias. */
+  template<typename T> using weak_ptr = IvyWeakPtr<T>;
   /** @brief Memory-view alias over IvyUnifiedPtr objects. */
   template<typename T, IvyPointerType IPT> using unifiedptr_view = std_ivy::memview<IvyUnifiedPtr<T, IPT>>;
 

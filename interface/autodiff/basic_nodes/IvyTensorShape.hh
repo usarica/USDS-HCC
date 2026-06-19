@@ -130,6 +130,13 @@ namespace IvyMath{
   };
 }
 
+namespace std_ivy{
+  // IvyTensorShape owns internal containers (the dimensions and element-map vectors). Without this
+  // registration a container/transfer would relocate it bitwise only, leaving those vectors' iterator
+  // builders aliased with the source and causing a double-free when both copies are destroyed.
+  template<> class transfer_memory_primitive<IvyMath::IvyTensorShape> : public transfer_memory_primitive_with_internal_memory<IvyMath::IvyTensorShape>{};
+}
+
 namespace std_util{
   void swap(IvyMath::IvyTensorShape& a, IvyMath::IvyTensorShape& b);
 }

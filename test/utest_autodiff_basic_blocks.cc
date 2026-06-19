@@ -57,7 +57,7 @@ void utest(){
   );
   __PRINT_INFO__(
     "t3dp[0,1,2] clients %p ?= %p\n",
-    t3dp->at({ 0,1,2 })->get_clients()[0].get(),
+    t3dp->at({ 0,1,2 })->get_clients()[0].unsafe_get(),
     t3dp.get()
   );
 
@@ -78,13 +78,13 @@ void utest(){
   );
   __PRINT_INFO__(
     "t3dp[0,1,2] clients reprint %p ?= %p\n",
-    t3dp->at({ 0,1,2 })->get_clients()[0].get(),
+    t3dp->at({ 0,1,2 })->get_clients()[0].unsafe_get(),
     t3dp.get()
   );
 
   //__PRINT_INFO__(
   //  "t3dpn[0,1,2] clients %p ?= %p\n",
-  //  (*t3dpn)->at({ 0,1,2 })->get_clients()[0].get(),
+  //  (*t3dpn)->at({ 0,1,2 })->get_clients()[0].unsafe_get(),
   //  (*t3dpn).get()
   //);
   t3dp_allocator_traits::destroy(t3dpn, 1, IvyMemoryType::Host, *stream);

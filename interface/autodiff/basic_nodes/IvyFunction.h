@@ -93,7 +93,11 @@ namespace IvyMath{
       constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
       output = std_mem::make_unique<value_t>(def_mem_type, nullptr);
     }
-    ~IvyFunction() = default;
+    // Virtual: function nodes are owned and destroyed through IvyFunction-base smart pointers
+    // (IvyFunctionPtr_t = shared_ptr<IvyFunction<...>>). A non-virtual base destructor would
+    // destroy only the base subobject, leaking every derived member (e.g. IvyRegularFunction's
+    // `dep`, `x`, `y`), which in turn keeps the entire dependency graph alive.
+    virtual __HOST__ ~IvyFunction() = default;
 
     // Function evaluator implementation
     virtual __HOST__ void eval() const = 0;
@@ -164,7 +168,9 @@ namespace IvyMath{
       constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
       output = std_mem::make_unique<value_t>(def_mem_type, nullptr);
     }
-    ~IvyFunction() = default;
+    // Virtual for safe polymorphic destruction through IvyFunction-base smart pointers
+    // (see the comment on the primary specialization's destructor).
+    virtual __HOST__ ~IvyFunction() = default;
 
     // Function evaluator implementation
     virtual __HOST__ void eval() const = 0;
@@ -227,6 +233,63 @@ namespace IvyMath{
       return make_IvyThreadSafePtr<IvyTensorEagerFunction<T>>(mem, nullptr, zero_val);
     }
   };
+
+  /**
+   * @brief Concrete constant-valued (eager) function node for scalar/complex domains.
+   *
+   * Holds a fixed value and exposes it as an
+   * @c IvyFunction<precision_type, Domain, Domain>. @c eval() is a no-op because
+   * the value never changes. Used to represent the result of differentiating a
+   * function node with respect to itself (@f$\partial f/\partial f = 1@f$) and,
+   * recursively, the zero that is its own gradient.
+   *
+   * This is the scalar/complex analogue of @c IvyTensorEagerFunction.
+   *
+   * @tparam precision_type  Underlying precision of the function value.
+   * @tparam Domain          Domain tag (@c real_domain_tag or @c complex_domain_tag).
+   */
+  template<typename precision_type, typename Domain>
+  class IvyConstantFunction final : public IvyFunction<precision_type, Domain, Domain>{
+  public:
+    using base_t = IvyFunction<precision_type, Domain, Domain>;
+    using value_t = typename base_t::value_t;
+    using dtype_t = typename base_t::dtype_t;
+    using grad_t = typename base_t::grad_t;
+
+    __HOST__ IvyConstantFunction() : base_t(){}
+    __HOST__ explicit IvyConstantFunction(value_t const& val) : base_t(val){}
+    __HOST__ IvyConstantFunction(IvyConstantFunction const& other) : base_t(__DYNAMIC_CAST__(base_t const&, other)){}
+    __HOST__ IvyConstantFunction(IvyConstantFunction&& other) : base_t(__DYNAMIC_CAST__(base_t&&, std_util::move(other))){}
+    ~IvyConstantFunction() = default;
+
+    __HOST__ void eval() const override{}
+
+    __HOST__ bool depends_on(IvyBaseNode const* node) const override{ return (this == node); }
+
+    /** @brief The gradient of a constant function is the zero constant function. */
+    __HOST__ IvyThreadSafePtr_t<grad_t> gradient(
+      IvyThreadSafePtr_t<IvyBaseNode> const& /*var*/
+    ) const override{
+      constexpr std_ivy::IvyMemoryType mem = IvyMemoryHelpers::get_execution_default_memory();
+      return make_IvyThreadSafePtr<IvyConstantFunction<precision_type, Domain>>(mem, nullptr);
+    }
+  };
+
+  /**
+   * @brief Build the constant-one function of a scalar/complex domain.
+   *
+   * Used as @f$\partial f/\partial f = 1@f$ when a function node is itself the
+   * differentiation target. Only valid for non-tensor domains; tensor self-
+   * differentiation is handled separately by the eager tensor path.
+   */
+  template<typename precision_type, typename Domain>
+  __HOST__ IvyThreadSafePtr_t<IvyFunction<precision_type, Domain>> make_unit_function(){
+    using fcn_t = IvyConstantFunction<precision_type, Domain>;
+    using value_t = typename fcn_t::value_t;
+    using dtype_t = typename fcn_t::dtype_t;
+    constexpr std_ivy::IvyMemoryType mem = IvyMemoryHelpers::get_execution_default_memory();
+    return make_IvyThreadSafePtr<fcn_t>(mem, nullptr, value_t(One<dtype_t>()));
+  }
 
   template<typename T, typename Domain = get_domain_t<T>, typename Operability = get_operability_t<T>>
   struct function_gradient{

@@ -60,6 +60,8 @@ namespace IvyMath{
       }
       return make_IvyThreadSafePtr<IvyTensorEagerFunction<T>>(mem, nullptr, result);
     } else {
+      if (var && __STATIC_CAST__(IvyBaseNode const*, this) == var.get())
+        return make_unit_function<precision_type, Domain>();
       auto grad_dep = function_gradient<T>::get(*dep, var);
       return evaluator_t::gradient(dep)*grad_dep;
     }
@@ -114,6 +116,10 @@ namespace IvyMath{
   __HOST__ IvyThreadSafePtr_t<typename IvyRegularFunction_2D<T, U, Evaluator, precision_type, Domain, GradientDomain>::grad_t> IvyRegularFunction_2D<T, U, Evaluator, precision_type, Domain, GradientDomain>::gradient(
     IvyThreadSafePtr_t<IvyBaseNode> const& var
   ) const{
+    if constexpr (!std_ttraits::is_same_v<Domain, tensor_domain_tag>){
+      if (var && __STATIC_CAST__(IvyBaseNode const*, this) == var.get())
+        return make_unit_function<precision_type, Domain>();
+    }
     auto grad_x = function_gradient<T>::get(*x, var);
     auto grad_y = function_gradient<U>::get(*y, var);
     return evaluator_t::gradient(0, x, y)*grad_x + evaluator_t::gradient(1, x, y)*grad_y;
