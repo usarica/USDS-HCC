@@ -112,7 +112,7 @@ namespace IvyMath{
   template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename NegateFcnal<T>::value_t Negate(T const& x);
   /// @brief Tensor-domain overload — @c __HOST__ only: tensor eval uses host-only STL constructs.
   template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST__ typename NegateFcnal<T>::value_t Negate(T const& x);
-  template<typename T, ENABLE_IF_BOOL(!is_arithmetic_v<T> && !is_pointer_v<T> && !is_tensor_v<T>)>
+  template<typename T, ENABLE_IF_BOOL(!is_arithmetic_v<T> && !is_pointer_v<T> && !is_tensor_v<T> && is_ivy_domain_v<T>)>
   __INLINE_FCN_RELAXED__ __HOST_DEVICE__ typename NegateFcnal<T>::value_t operator-(T const& x);
   /// @brief Tensor-domain unary minus — @c __HOST__ only: tensor eval uses host-only STL constructs.
   template<typename T, ENABLE_IF_BOOL(!is_arithmetic_v<T> && !is_pointer_v<T> && is_tensor_v<T>)>
@@ -984,7 +984,7 @@ namespace IvyMath{
   template<typename T, typename U> using IvyAdd = IvyRegularFunction_2D<T, U, AddFcnal<unpack_if_function_t<T>, unpack_if_function_t<U>>>;
   template<typename T, typename U, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_pointer_v<U>)>
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename AddFcnal<T, U>::value_t Add(T const& x, U const& y);
-  template<typename T, typename U, ENABLE_IF_BOOL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U>)>
+  template<typename T, typename U, ENABLE_IF_BOOL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U> && (is_ivy_domain_v<T> || is_ivy_domain_v<U>))>
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename AddFcnal<T, U>::value_t operator+(T const& x, U const& y);
   /**
    * @brief Construct a lazy Add function node for autodiff.
@@ -1074,6 +1074,8 @@ namespace IvyMath{
       !is_pointer_v<T> && !is_pointer_v<U>
       &&
       !std_iter::is_contiguous_iterator_v<T> && !std_iter::is_contiguous_iterator_v<U>
+      &&
+      (is_ivy_domain_v<T> || is_ivy_domain_v<U>)
     )
   >
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename SubtractFcnal<T, U>::value_t operator-(T const& x, U const& y);
@@ -1173,7 +1175,7 @@ namespace IvyMath{
   /// @brief Tensor-domain overload — @c __HOST__ only: tensor eval uses host-only STL constructs.
   template<typename T, typename U, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_pointer_v<U> && (is_tensor_v<T> || is_tensor_v<U>))>
   __INLINE_FCN_FORCE__ __HOST__ typename MultiplyFcnal<T, U>::value_t Multiply(T const& x, U const& y);
-  template<typename T, typename U, ENABLE_IF_BOOL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U> && !is_tensor_v<T> && !is_tensor_v<U>)>
+  template<typename T, typename U, ENABLE_IF_BOOL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U> && !is_tensor_v<T> && !is_tensor_v<U> && (is_ivy_domain_v<T> || is_ivy_domain_v<U>))>
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename MultiplyFcnal<T, U>::value_t operator*(T const& x, U const& y);
   /// @brief Tensor-domain @c operator* — @c __HOST__ only: tensor eval uses host-only STL constructs.
   template<typename T, typename U, ENABLE_IF_BOOL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U> && (is_tensor_v<T> || is_tensor_v<U>))>
@@ -1259,7 +1261,7 @@ namespace IvyMath{
   template<typename T, typename U> using IvyDivide = IvyRegularFunction_2D<T, U, DivideFcnal<unpack_if_function_t<T>, unpack_if_function_t<U>>>;
   template<typename T, typename U, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_pointer_v<U>)>
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename DivideFcnal<T, U>::value_t Divide(T const& x, U const& y);
-  template<typename T, typename U, ENABLE_IF_BOOL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U>)>
+  template<typename T, typename U, ENABLE_IF_BOOL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U> && (is_ivy_domain_v<T> || is_ivy_domain_v<U>))>
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename DivideFcnal<T, U>::value_t operator/(T const& x, U const& y);
   /**
    * @brief Construct a lazy Divide function node for autodiff.

@@ -109,7 +109,7 @@ namespace IvyMath{
   }
   template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_tensor_v<T>)> __HOST_DEVICE__ typename NegateFcnal<T>::value_t Negate(T const& x){ return NegateFcnal<T>::eval(x); }
   template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && is_tensor_v<T>)> __HOST__ typename NegateFcnal<T>::value_t Negate(T const& x){ return NegateFcnal<T>::eval(x); }
-  template<typename T, ENABLE_IF_BOOL_IMPL(!is_arithmetic_v<T> && !is_pointer_v<T> && !is_tensor_v<T>)> __HOST_DEVICE__ typename NegateFcnal<T>::value_t operator-(T const& x){ return Negate(x); }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_arithmetic_v<T> && !is_pointer_v<T> && !is_tensor_v<T> && is_ivy_domain_v<T>)> __HOST_DEVICE__ typename NegateFcnal<T>::value_t operator-(T const& x){ return Negate(x); }
   template<typename T, ENABLE_IF_BOOL_IMPL(!is_arithmetic_v<T> && !is_pointer_v<T> && is_tensor_v<T>)> __HOST__ typename NegateFcnal<T>::value_t operator-(T const& x){ return Negate(x); }
   /**
    * @brief Construct a lazy Negate function node for autodiff.
@@ -1208,7 +1208,7 @@ namespace IvyMath{
   }
   template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U>)>
   __HOST_DEVICE__ typename AddFcnal<T, U>::value_t Add(T const& x, U const& y){ return AddFcnal<T, U>::eval(x, y); }
-  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U>)>
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U> && (is_ivy_domain_v<T> || is_ivy_domain_v<U>))>
   __HOST_DEVICE__ typename AddFcnal<T, U>::value_t operator+(T const& x, U const& y){ return Add(x, y); }
   /**
    * @brief Construct a lazy Add function node for autodiff.
@@ -1316,6 +1316,8 @@ namespace IvyMath{
       !is_pointer_v<T> && !is_pointer_v<U>
       &&
       !std_iter::is_contiguous_iterator_v<T> && !std_iter::is_contiguous_iterator_v<U>
+      &&
+      (is_ivy_domain_v<T> || is_ivy_domain_v<U>)
     )
   > __HOST_DEVICE__ typename SubtractFcnal<T, U>::value_t operator-(T const& x, U const& y){ return Subtract(x, y); }
   /**
@@ -1456,7 +1458,7 @@ namespace IvyMath{
   __HOST_DEVICE__ typename MultiplyFcnal<T, U>::value_t Multiply(T const& x, U const& y){ return MultiplyFcnal<T, U>::eval(x, y); }
   template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U> && (is_tensor_v<T> || is_tensor_v<U>))>
   __HOST__ typename MultiplyFcnal<T, U>::value_t Multiply(T const& x, U const& y){ return MultiplyFcnal<T, U>::eval(x, y); }
-  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U> && !is_tensor_v<T> && !is_tensor_v<U>)>
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U> && !is_tensor_v<T> && !is_tensor_v<U> && (is_ivy_domain_v<T> || is_ivy_domain_v<U>))>
   __HOST_DEVICE__ typename MultiplyFcnal<T, U>::value_t operator*(T const& x, U const& y){ return Multiply(x, y); }
   template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U> && (is_tensor_v<T> || is_tensor_v<U>))>
   __HOST__ typename MultiplyFcnal<T, U>::value_t operator*(T const& x, U const& y){ return Multiply(x, y); }
@@ -1566,7 +1568,7 @@ namespace IvyMath{
   }
   template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U>)>
   __HOST_DEVICE__ typename DivideFcnal<T, U>::value_t Divide(T const& x, U const& y){ return DivideFcnal<T, U>::eval(x, y); }
-  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U>)>
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!(is_arithmetic_v<T> && is_arithmetic_v<U>) && !is_pointer_v<T> && !is_pointer_v<U> && (is_ivy_domain_v<T> || is_ivy_domain_v<U>))>
   __HOST_DEVICE__ typename DivideFcnal<T, U>::value_t operator/(T const& x, U const& y){ return Divide(x, y); }
   /**
    * @brief Construct a lazy Divide function node for autodiff.

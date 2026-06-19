@@ -38,6 +38,12 @@ namespace IvyMath{
   template<typename T> inline constexpr bool is_complex_v = std_ttraits::is_same_v<complex_domain_tag, get_domain_t<T>>;
   template<typename T> inline constexpr bool is_tensor_v = std_ttraits::is_same_v<tensor_domain_tag, get_domain_t<T>>;
 
+  // True when T (after unwrapping pointers/IvyThreadSafePtr) carries an Ivy math domain
+  // (real, complex, or tensor) — i.e. it is an Ivy node type, not a bare arithmetic value or an
+  // unrelated foreign type. Used to constrain the global operators so they do not get selected
+  // for foreign types (e.g. std::chrono), which previously caused hard errors via ADL.
+  template<typename T> inline constexpr bool is_ivy_domain_v = is_real_v<T> || is_complex_v<T> || is_tensor_v<T>;
+
   // Operability properties
   struct constant_value_tag{};
   struct variable_value_tag{};
