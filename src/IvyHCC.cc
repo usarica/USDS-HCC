@@ -1,5 +1,5 @@
 /**
- * @file IvyHeterogeneousCore.cc
+ * @file IvyHCC.cc
  * @brief Explicit instantiation translation unit for the shared library.
  */
-#include "IvyHeterogeneousCore.h"
+#include "IvyHCC.h"

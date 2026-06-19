@@ -1,5 +1,5 @@
 PROJECTNAME          = IvyFramework
-PACKAGENAME          = IvyHeterogeneousCore
+PACKAGENAME          = IvyHCC
 
 # Parallel compilation: use all available cores.
 # -k (keep-going) ensures that a single failing TU does not abort other independent targets.
@@ -146,15 +146,15 @@ clean:
 
 
 LIBDIR         = $(COMPILEPATH)lib/
-LIBNAME        = libIvyHeterogeneousCore
+LIBNAME        = libIvyHCC
 SRCDIR         = $(COMPILEPATH)src/
 
 lib:
 	mkdir -p $(LIBDIR)
 ifeq ($(strip $(USE_CUDA)),)
-	$(CXX) $(CXXFLAGS) -shared -o $(LIBDIR)$(LIBNAME).so $(SRCDIR)IvyHeterogeneousCore.cc
+	$(CXX) $(CXXFLAGS) -shared -o $(LIBDIR)$(LIBNAME).so $(SRCDIR)IvyHCC.cc
 else
-	$(CXX) $(CXXFLAGS) -o $(LIBDIR)$(LIBNAME).o $(SRCDIR)IvyHeterogeneousCore.cc
+	$(CXX) $(CXXFLAGS) -o $(LIBDIR)$(LIBNAME).o $(SRCDIR)IvyHCC.cc
 	$(CXX) $(LIBDLINKFLAGS) -dlink -shared $(LIBDIR)$(LIBNAME).o -o $(LIBDIR)$(LIBNAME)_dlink.o
 	$(CXX) $(LIBDLINKFLAGS) -shared $(LIBDIR)$(LIBNAME).o $(LIBDIR)$(LIBNAME)_dlink.o -o $(LIBDIR)$(LIBNAME).so -lcudart
 	rm -f $(LIBDIR)$(LIBNAME).o $(LIBDIR)$(LIBNAME)_dlink.o

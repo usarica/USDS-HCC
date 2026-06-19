@@ -1,4 +1,4 @@
-# IvyHeterogeneousCore
+# USDS-HCC
 
 A header-only C++20 autodiff library providing STL-like components for heterogeneous execution (CPU + optional CUDA GPU), with explicit memory-domain control, custom allocators, stream/event abstractions, and a full tensor-aware automatic differentiation engine.
 
@@ -8,7 +8,7 @@ A header-only C++20 autodiff library providing STL-like components for heterogen
 - Copying, use, execution, modification, distribution, or creation of derivative works is prohibited unless explicit prior written authorization is granted by Ulaşcan Sarıca.
 - Full legal terms: [License](LICENSE.md).
 
-This repository is part of `IvyFramework` and is focused on reusable low-level infrastructure for hybrid computing.
+This repository is part of the software packages provided by `US Data Science` and is focused on reusable low-level infrastructure for hybrid computing.
 
 ---
 
@@ -33,7 +33,7 @@ This repository is part of `IvyFramework` and is focused on reusable low-level i
 
 ## 1. Project Overview
 
-`IvyHeterogeneousCore` is a lightweight, header-only C++20 library for automatic differentiation (autodiff) on both scalars and tensors, targeting both CPU and NVIDIA GPU hardware through a unified interface. It is designed for scientists and engineers who need:
+`USDS-HCC` is a lightweight, header-only C++20 library for automatic differentiation (autodiff) on both scalars and tensors, targeting both CPU and NVIDIA GPU hardware through a unified interface. It is designed for scientists and engineers who need:
 
 - **Automatic differentiation** of arbitrarily nested mathematical expressions, including full chain-rule gradient propagation through scalar, complex, and tensor quantities.
 - **Heterogeneous execution**: the same code compiles and runs on CPU (with optional OpenMP) and CUDA GPU without any source changes — just pass `USE_CUDA=1` to `make`.
@@ -41,7 +41,7 @@ This repository is part of `IvyFramework` and is focused on reusable low-level i
 - **STL-compatible abstractions**: `IvyVector`, `IvyUnorderedMap`, iterators, allocators, and smart pointers that mirror the standard library API while adding memory-domain awareness.
 - **Zero runtime overhead for headers**: the library is header-only. No separate build step is required for the autodiff engine; all template instantiation happens at your compile time.
 
-The library was built to power the `IvyFramework` ecosystem — a larger collection of C++ components for high-energy physics (HEP) data analysis — but is entirely standalone and suitable for any C++20 project that needs portable autodiff on heterogeneous hardware.
+The library was built to power the `US Data Science` statistical analysis ecosystem — a larger collection of C++ components for high-energy physics (HEP) data analysis — but is entirely standalone and suitable for any C++20 project that needs portable autodiff on heterogeneous hardware.
 
 ---
 
@@ -198,9 +198,9 @@ This switches the compiler to `nvcc`, adds `-D__USE_CUDA__` and
 make lib
 ```
 
-Produces `lib/libIvyHeterogeneousCore.so` by compiling `src/IvyHeterogeneousCore.cc`
+Produces `lib/libIvyHCC.so` by compiling `src/IvyHCC.cc`
 (a minimal translation unit that includes the umbrella header
-`interface/IvyHeterogeneousCore.h`) as a position-independent shared object.
+`interface/IvyHCC.h`) as a position-independent shared object.
 
 ### 4.4 Shared library (CUDA)
 
@@ -208,7 +208,7 @@ Produces `lib/libIvyHeterogeneousCore.so` by compiling `src/IvyHeterogeneousCore
 make lib USE_CUDA=1
 ```
 
-Produces `lib/libIvyHeterogeneousCore.so` by compiling with `nvcc` in device-link
+Produces `lib/libIvyHCC.so` by compiling with `nvcc` in device-link
 (`-dc`) mode and then linking with `-dlink -shared`.
 
 ### 4.5 Clean build artifacts
@@ -247,7 +247,7 @@ Link an external application:
 ```bash
 g++ -std=c++20 -O2 -I./interface \
   -L./lib -Wl,-rpath,'$ORIGIN/lib' \
-  -lIvyHeterogeneousCore your_app.cc -o your_app
+  -lIvyHCC your_app.cc -o your_app
 ```
 
 ### 4.8 One-line ergonomics demo
@@ -270,15 +270,15 @@ compiles against the library's headers with no pre-built libraries needed.
 
 ```cpp
 /**
- * quickstart.cc — minimal IvyHeterogeneousCore autodiff example.
+ * quickstart.cc — minimal IvyHCC autodiff example.
  *
  * Compile (CPU):
- *   g++ -std=c++20 -O2 -I/workspace/IvyHeterogeneousCore/interface -o quickstart quickstart.cc
+ *   g++ -std=c++20 -O2 -I/workspace/USDS-HCC/interface -o quickstart quickstart.cc
  *
  * Compile (CUDA):
  *   nvcc -std=c++20 -O2 -x cu -rdc=true -D__USE_CUDA__ \
  *        -D__LONG_DOUBLE_FORBIDDEN__ \
- *        -I/workspace/IvyHeterogeneousCore/interface -o quickstart quickstart.cc
+ *        -I/workspace/USDS-HCC/interface -o quickstart quickstart.cc
  */
 #include "autodiff/arithmetic/IvyMathBaseArithmetic.h"
 #include "autodiff/basic_nodes/IvyTensor.h"
@@ -341,7 +341,7 @@ d/dy Exp(t)[0] = 20.085537  (expect 20.085537)
 
 All autodiff types live in the `IvyMath` namespace (header:
 `autodiff/arithmetic/IvyMathBaseArithmetic.h` or the umbrella
-`IvyHeterogeneousCore.h`).
+`IvyHCC.h`).
 
 ### 6.1 `IvyConstant<T>`
 
@@ -617,25 +617,25 @@ std_ivy::vector<double> v(10, IvyMemoryType::Host, stream, 0.0);
 ## 10. Using as a Shared Library
 
 After `make lib` (or `make lib USE_CUDA=1`), the shared object is at
-`lib/libIvyHeterogeneousCore.so`.
+`lib/libIvyHCC.so`.
 
 ### Linking against the shared library (CPU build)
 
 ```bash
-IVYROOT=/path/to/IvyHeterogeneousCore
+IVYROOT=/path/to/IvyHCC
 
 g++ -std=c++20 -O2 \
-    -I/workspace/IvyHeterogeneousCore/interface \
-    -L/workspace/IvyHeterogeneousCore/lib \
-    -lIvyHeterogeneousCore \
-    -Wl,-rpath,/workspace/IvyHeterogeneousCore/lib \
+    -I/workspace/USDS-HCC/interface \
+    -L/workspace/USDS-HCC/lib \
+    -lIvyHCC \
+    -Wl,-rpath,/workspace/USDS-HCC/lib \
     -o myapp myapp.cc
 ```
 
 Or set `LD_LIBRARY_PATH` at runtime instead of `-Wl,-rpath`:
 
 ```bash
-export LD_LIBRARY_PATH=/workspace/IvyHeterogeneousCore/lib:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=/workspace/USDS-HCC/lib:${LD_LIBRARY_PATH}
 ./myapp
 ```
 
@@ -644,10 +644,10 @@ export LD_LIBRARY_PATH=/workspace/IvyHeterogeneousCore/lib:${LD_LIBRARY_PATH}
 ```bash
 nvcc -std=c++20 -O2 -x cu -rdc=true \
      -D__USE_CUDA__ -D__LONG_DOUBLE_FORBIDDEN__ \
-     -I/workspace/IvyHeterogeneousCore/interface \
-     -L/workspace/IvyHeterogeneousCore/lib \
-     -lIvyHeterogeneousCore \
-     -Xlinker -rpath,/workspace/IvyHeterogeneousCore/lib \
+     -I/workspace/USDS-HCC/interface \
+     -L/workspace/USDS-HCC/lib \
+     -lIvyHCC \
+     -Xlinker -rpath,/workspace/USDS-HCC/lib \
      -o myapp myapp.cu
 ```
 
@@ -660,7 +660,7 @@ the include path and compile:
 
 ```bash
 g++ -std=c++20 -O2 \
-    -I/path/to/IvyHeterogeneousCore/interface \
+    -I/path/to/IvyHCC/interface \
     -o myapp myapp.cc
 ```
 
@@ -669,14 +669,14 @@ For CUDA:
 ```bash
 nvcc -std=c++20 -O2 -x cu -rdc=true \
      -D__USE_CUDA__ -D__LONG_DOUBLE_FORBIDDEN__ \
-     -I/path/to/IvyHeterogeneousCore/interface \
+     -I/path/to/IvyHCC/interface \
      -o myapp myapp.cu
 ```
 
-The umbrella header `IvyHeterogeneousCore.h` pulls in everything:
+The umbrella header `IvyHCC.h` pulls in everything:
 
 ```cpp
-#include "IvyHeterogeneousCore.h"
+#include "IvyHCC.h"
 ```
 
 Or include only what you need:
@@ -695,7 +695,7 @@ The repository ships with a fully configured `Doxyfile` at the root.
 Generate the HTML reference documentation:
 
 ```bash
-cd /path/to/IvyHeterogeneousCore
+cd /path/to/IvyHCC
 doxygen Doxyfile
 ```
 
@@ -737,7 +737,7 @@ a library bug.
 ### `size_t` ambiguity when including `IvyUnorderedMap.h`
 
 The internal `IvyUnorderedMapImpl.h` uses the bare name `size_t` in the
-`std_ivy` namespace. If the umbrella header `IvyHeterogeneousCore.h` is
+`std_ivy` namespace. If the umbrella header `IvyHCC.h` is
 included after any header that transitively includes `<cstring>` (which
 brings `::size_t` from `<stddef.h>` into scope), and the `IvyTypes::size_t`
 type is also reachable, the compiler reports:
@@ -749,7 +749,7 @@ note:                 'typedef long long unsigned int IvyTypes::size_t'
 ```
 
 **Solution**: include `IvyVector.h` and `IvyUnorderedMap.h` **before** any
-header that includes `<cstring>`. The provided `IvyHeterogeneousCore.h`
+header that includes `<cstring>`. The provided `IvyHCC.h`
 umbrella header already enforces this order. If you build your own include
 chain, put the unordered-map headers first.
 
@@ -780,20 +780,20 @@ make utests USE_CUDA=1 GPU_ARCH_RAW=80   # Ampere A100
 make utests USE_CUDA=1 GPU_ARCH_RAW=75   # Turing T4
 ```
 
-### Linker errors: `undefined reference` with `-lIvyHeterogeneousCore`
+### Linker errors: `undefined reference` with `-lIvyHCC`
 
 The shared library (`make lib`) is built from a near-empty translation unit
-(`src/IvyHeterogeneousCore.cc`) because the library is header-only — most
+(`src/IvyHCC.cc`) because the library is header-only — most
 definitions are inline templates. If you see missing symbols, ensure you
 also compile your own source with the include path:
 
 ```bash
-g++ -std=c++20 -I/workspace/IvyHeterogeneousCore/interface -L/workspace/IvyHeterogeneousCore/lib \
-    -lIvyHeterogeneousCore -o /workspace/IvyHeterogeneousCore/executables/shared_library_smoke \
-    /workspace/IvyHeterogeneousCore/bin/shared_library_smoke.cc
+g++ -std=c++20 -I/workspace/USDS-HCC/interface -L/workspace/USDS-HCC/lib \
+    -lIvyHCC -o /workspace/USDS-HCC/executables/shared_library_smoke \
+    /workspace/USDS-HCC/bin/shared_library_smoke.cc
 ```
 
-and that `LD_LIBRARY_PATH` (or `-Wl,-rpath`) points to `/workspace/IvyHeterogeneousCore/lib`.
+and that `LD_LIBRARY_PATH` (or `-Wl,-rpath`) points to `/workspace/USDS-HCC/lib`.
 
 ---
 
@@ -820,17 +820,17 @@ See the full legal terms in [License](LICENSE.md) (authoritative legal file: `LI
 All commands below were executed from a clean shell using `set -euo pipefail` and literal repository paths.
 
 ```bash
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && make distclean
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && make EXTCXXFLAGS='-w' pch && make EXTCXXFLAGS='-w' utests
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && make lib
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && USE_CUDA=1 make EXTCXXFLAGS='-w' utests
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && USE_CUDA=1 make lib
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && for b in /workspace/IvyHeterogeneousCore/executables/*; do timeout 120s "$b"; done
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && for t in /workspace/IvyHeterogeneousCore/test_executables/utest_*; do timeout 120s "$t"; done
+cd /workspace/USDS-HCC && set -euo pipefail && make distclean
+cd /workspace/USDS-HCC && set -euo pipefail && make EXTCXXFLAGS='-w' pch && make EXTCXXFLAGS='-w' utests
+cd /workspace/USDS-HCC && set -euo pipefail && make lib
+cd /workspace/USDS-HCC && set -euo pipefail && USE_CUDA=1 make EXTCXXFLAGS='-w' utests
+cd /workspace/USDS-HCC && set -euo pipefail && USE_CUDA=1 make lib
+cd /workspace/USDS-HCC && set -euo pipefail && for b in /workspace/USDS-HCC/executables/*; do timeout 120s "$b"; done
+cd /workspace/USDS-HCC && set -euo pipefail && for t in /workspace/USDS-HCC/test_executables/utest_*; do timeout 120s "$t"; done
 ```
 
 ### Shared-library include/link workflow (literal paths)
 
 ```bash
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && g++ -std=c++20 -O2 -I/workspace/IvyHeterogeneousCore/interface -L/workspace/IvyHeterogeneousCore/lib -lIvyHeterogeneousCore -Wl,-rpath,/workspace/IvyHeterogeneousCore/lib -o /workspace/IvyHeterogeneousCore/executables/shared_library_smoke /workspace/IvyHeterogeneousCore/bin/shared_library_smoke.cc
+cd /workspace/USDS-HCC && set -euo pipefail && g++ -std=c++20 -O2 -I/workspace/USDS-HCC/interface -L/workspace/USDS-HCC/lib -lIvyHCC -Wl,-rpath,/workspace/USDS-HCC/lib -o /workspace/USDS-HCC/executables/shared_library_smoke /workspace/USDS-HCC/bin/shared_library_smoke.cc
 ```

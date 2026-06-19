@@ -6,7 +6,7 @@ This page is a Doxygen-friendly rendering of the project license.
 
 ---
 
-## IvyHeterogeneousCore Proprietary License
+## USDS-HCC Proprietary License
 
 Version 1.0
 

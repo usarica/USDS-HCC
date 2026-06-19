@@ -1,8 +1,8 @@
-# IvyHeterogeneousCore — Usage Guide
+#  USDS-HCC — Usage Guide
 
 ## 1. Overview
 
-`IvyHeterogeneousCore` is a header-only C++20 autodiff library that generalizes the
+`USDS-HCC` is a header-only C++20 autodiff library that generalizes the
 C++ Standard Library for heterogeneous CPU+GPU environments. It provides a lazy
 autodiff graph whose nodes can live in host memory and whose element-wise evaluation
 kernels execute on either the CPU or CUDA devices, controlled entirely at compile
@@ -238,14 +238,14 @@ or CUDA-enabled:
 USE_CUDA=1 make lib
 ```
 
-The generated library is `lib/libIvyHeterogeneousCore.so`.
+The generated library is `lib/libIvyHCC.so`.
 
 ### Link against the shared library
 
 ```bash
 g++ -std=c++20 -O2 -I./interface \
   -L./lib -Wl,-rpath,'$ORIGIN/lib' \
-  -lIvyHeterogeneousCore your_app.cc -o your_app
+  -lIvyHCC your_app.cc -o your_app
 ```
 
 ### Smoke-test dynamic linking
@@ -332,10 +332,10 @@ Concrete patterns:
 ## 10. One-Line Commands (Literal Paths, Non-Interactive)
 
 ```bash
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && make distclean
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && make EXTCXXFLAGS='-w' pch && make EXTCXXFLAGS='-w' utests
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && USE_CUDA=1 make EXTCXXFLAGS='-w' utests
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && make lib && USE_CUDA=1 make lib
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && for b in /workspace/IvyHeterogeneousCore/executables/*; do timeout 120s "$b"; done
-cd /workspace/IvyHeterogeneousCore && set -euo pipefail && for t in /workspace/IvyHeterogeneousCore/test_executables/utest_*; do timeout 120s "$t"; done
+cd /workspace/USDS-HCC && set -euo pipefail && make distclean
+cd /workspace/USDS-HCC && set -euo pipefail && make EXTCXXFLAGS='-w' pch && make EXTCXXFLAGS='-w' utests
+cd /workspace/USDS-HCC && set -euo pipefail && USE_CUDA=1 make EXTCXXFLAGS='-w' utests
+cd /workspace/USDS-HCC && set -euo pipefail && make lib && USE_CUDA=1 make lib
+cd /workspace/USDS-HCC && set -euo pipefail && for b in /workspace/USDS-HCC/executables/*; do timeout 120s "$b"; done
+cd /workspace/USDS-HCC && set -euo pipefail && for t in /workspace/USDS-HCC/test_executables/utest_*; do timeout 120s "$t"; done
 ```
