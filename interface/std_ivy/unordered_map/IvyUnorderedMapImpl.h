@@ -319,7 +319,7 @@ namespace std_ivy{
     size_type const current_bucket_size = this->bucket_count();
     size_type const current_bucket_capacity = this->bucket_capacity();
     size_type const preferred_current_data_capacity = hash_equal::preferred_data_capacity(current_bucket_capacity);
-    size_type const current_max_n_bucket_elements = (preferred_current_data_capacity+1)/current_bucket_capacity;
+    size_type const current_max_n_bucket_elements = (current_bucket_capacity==0 ? 0 : (preferred_current_data_capacity+1)/current_bucket_capacity);
 
     size_type const new_size = current_size + 1;
     size_type const new_capacity = (new_size>current_capacity ? new_size + 1 : current_capacity);

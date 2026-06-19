@@ -81,6 +81,9 @@ namespace IvyMemoryHelpers{
   /** @brief Check if host-side code must dispatch accelerator kernels for @p type. */
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ constexpr bool run_acc_on_host(IvyMemoryType type);
 
+  /** @brief Check if memory of @p type is directly addressable from the current execution space (no cross-domain copy needed). */
+  __INLINE_FCN_FORCE__ __HOST_DEVICE__ constexpr bool is_addressable_from_execution(IvyMemoryType type);
+
   /**
   get_execution_default_memory: Returns the default memory type for the current execution environment.
   For host code or if not using CUDA, this is IvyMemoryType::Host.
@@ -155,6 +158,18 @@ namespace IvyMemoryHelpers{
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ constexpr bool run_acc_on_host(IvyMemoryType type){
     constexpr IvyMemoryType def_mem_type = get_execution_default_memory();
     return (use_device_host(def_mem_type) && use_device_acc(type));
+  }
+
+  /**
+  is_addressable_from_execution: Returns true if memory of the given type can be dereferenced
+  directly from the current execution space (no cross-domain copy needed).
+  - In host execution, host memory (Host/PageLocked) and unified memory are directly addressable.
+  - In device execution, GPU memory and unified memory are directly addressable.
+  Unified memory is always addressable because it is mapped into both spaces.
+  */
+  __INLINE_FCN_FORCE__ __HOST_DEVICE__ constexpr bool is_addressable_from_execution(IvyMemoryType type){
+    constexpr IvyMemoryType def_mem_type = get_execution_default_memory();
+    return is_unified_memory(type) || (use_device_host(def_mem_type) ? is_host_memory(type) : is_gpu_memory(type));
   }
 }
 

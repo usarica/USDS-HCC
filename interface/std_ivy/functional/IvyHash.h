@@ -42,7 +42,7 @@ namespace ivy_hash_impl{
       if constexpr (remainder>0){
         result_type pv = 0;
         char const* prch = __REINTERPRET_CAST__(char const*, &__CONST_CAST__(char&, __REINTERPRET_CAST__(const volatile char&, prc[nparts_full])));
-        for (result_type i=0; i<remainder; ++i) pv |= (prch[i]<<(i*8));
+        for (result_type i=0; i<remainder; ++i) pv |= (__STATIC_CAST__(result_type, __STATIC_CAST__(unsigned char, prch[i]))<<(i*8));
         res ^= pv;
       }
       return res;
@@ -63,7 +63,7 @@ namespace ivy_hash_impl{
       result_type res = 0;
       {
         argument_type vv = v;
-        for (result_type i=0; *vv; ++i){ res ^= ((*vv)<<((i*8)%(nbits_partition-nbits_arg_el+1))); ++vv; }
+        for (result_type i=0; *vv; ++i){ result_type const shift = ((i%size_partition)*nbits_arg_el)%nbits_partition; res ^= (__STATIC_CAST__(result_type, __STATIC_CAST__(unsigned char, *vv))<<shift); ++vv; }
       }
       return res;
     }
@@ -83,7 +83,7 @@ namespace ivy_hash_impl{
       result_type res = 0;
       {
         argument_type vv = v;
-        for (result_type i=0; *vv; ++i){ res ^= ((*vv)<<((i*8)%(nbits_partition-nbits_arg_el+1))); ++vv; }
+        for (result_type i=0; *vv; ++i){ result_type const shift = ((i%size_partition)*nbits_arg_el)%nbits_partition; res ^= (__STATIC_CAST__(result_type, __STATIC_CAST__(unsigned char, *vv))<<shift); ++vv; }
       }
       return res;
     }

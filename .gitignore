@@ -26,6 +26,7 @@
 **/*.eps
 **/settings.json
 **/.vscode
+**/.copilot*
 **/evidence*
 **/*_logs
 test/*.root
@@ -35,3 +36,4 @@ test/*.txt
 obj
 lib
 *executables
+*executables_san

@@ -246,19 +246,18 @@ namespace std_ivy{
         }
       }
       else{
-        #define _CMD \
-        for (size_type i=0; i<n; ++i) res &= kernel_type::transfer_internal_memory(ptr+i, mem_type, release_old);
+        // res is accumulated with &= across iterations; under OpenMP this must use a
+        // reduction to avoid a data race on the shared accumulator (TSan-confirmed).
 #if defined(OPENMP_ENABLED)
         if (n>=NUM_CPU_THREADS_THRESHOLD){
-          #pragma omp parallel for schedule(static)
-          _CMD
+          #pragma omp parallel for schedule(static) reduction(&:res)
+          for (size_type i=0; i<n; ++i) res &= kernel_type::transfer_internal_memory(ptr+i, mem_type, release_old);
         }
         else
 #endif
         {
-          _CMD
+          for (size_type i=0; i<n; ++i) res &= kernel_type::transfer_internal_memory(ptr+i, mem_type, release_old);
         }
-        #undef _CMD
       }
       return res;
     }
@@ -635,7 +634,9 @@ namespace IvyMemoryHelpers{
       assert(0);
     }
     if (n_tgt_init!=n_tgt){
-      res &= std_ivy::deallocator_primitive<T>::destroy(target, n_tgt_init, type_tgt, stream);
+      // Only destroy an existing allocation; destroying a null target would return
+      // false (see destruct_fcnal) and wrongly poison res, skipping the copy below.
+      if (target) res &= std_ivy::deallocator_primitive<T>::destroy(target, n_tgt_init, type_tgt, stream);
       res &= std_ivy::allocator_primitive<T>::allocate(target, n_tgt, type_tgt, stream);
     }
     if (res){

@@ -1,0 +1,42 @@
+name: Sanitizers & Valgrind
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Host (CPU/g++) memory- and thread-safety gates for the header-only core.
+# The CUDA path is not exercised here; these jobs cover the OpenMP/CPU fallbacks.
+jobs:
+  asan-ubsan:
+    name: ASan + UBSan (utests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: sudo apt-get update && sudo apt-get install -y g++ make
+      - name: Build + run unit tests under AddressSanitizer/UBSan
+        run: make utests-asan
+
+  tsan:
+    name: ThreadSanitizer (std::thread refcount test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: sudo apt-get update && sudo apt-get install -y g++ make
+      - name: Build + run threaded regression test under ThreadSanitizer
+        run: make utests-tsan
+
+  valgrind:
+    name: Valgrind smoke (leaks / memory safety)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: sudo apt-get update && sudo apt-get install -y g++ make valgrind
+      - name: Build + run unit tests under Valgrind
+        run: make valgrind-utests

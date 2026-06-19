@@ -34,8 +34,8 @@ template<typename T> struct test_unifiedptr_ptr : public kernel_base_noprep_nofi
   static __INLINE_FCN_RELAXED__ __HOST_DEVICE__ void kernel_unified_unit(T* ptr){
     if (ptr){
       printf("Calling test_unifiedptr_ptr...\n");
-      printf("test_unifiedptr_ptr: Device ptr ptrs: address, ptr, mem_type, stream, size, counter, exec_mem = %p, %p, %p, %p, %p, %p, %u\n", ptr, ptr->get(), ptr->get_memory_type_ptr(), ptr->gpu_stream(), ptr->size_ptr(), ptr->counter(), ptr->get_exec_memory_type());
-      if (ptr->get()) printf("test_unifiedptr_ptr: Device ptr no. of copies, counter val., memory type, dummy_D.a: %llu, %llu, %u, %f\n", ptr->use_count(), *(ptr->counter()), ptr->get_memory_type(), (*ptr)->a);
+      printf("test_unifiedptr_ptr: Device ptr ptrs: address, ptr, mem_type, stream, size, counter, exec_mem = %p, %p, %p, %p, %p, %p, %u\n", ptr, ptr->get(), ptr->get_memory_type_ptr(), ptr->gpu_stream(), ptr->size_ptr(), ptr->counter(), __STATIC_CAST__(unsigned int, ptr->get_exec_memory_type()));
+      if (ptr->get()) printf("test_unifiedptr_ptr: Device ptr no. of copies, counter val., memory type, dummy_D.a: %llu, %llu, %u, %f\n", ptr->use_count(), *(ptr->counter()), __STATIC_CAST__(unsigned int, ptr->get_memory_type()), (*ptr)->a);
       else printf("test_unifiedptr_ptr: Device ptr is null.\n");
     }
     else printf("test_unifiedptr_ptr: Pointer is null.\n");
@@ -118,7 +118,7 @@ int main(){
     __PRINT_INFO__("**********\n");
 
     auto& stream = *(streams[i]);
-    __PRINT_INFO__("Stream %i (%p, %p, size in bytes = %d) computing...\n", i, &stream, stream.stream(), sizeof(&stream));
+    __PRINT_INFO__("Stream %i (%p, %p, size in bytes = %llu) computing...\n", i, &stream, (void*) &stream.stream(), __STATIC_CAST__(unsigned long long, sizeof(&stream)));
 
     utest(stream);
 
