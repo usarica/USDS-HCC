@@ -67,6 +67,51 @@ namespace IvyMath{
     return res;
   }
 
+  /**
+   * @brief Read a single tensor element's canonical value, independent of representation.
+   *
+   * Mirrors the per-element unpacking in @ref tensor_apply_elementwise so binary
+   * ops (e.g. Pow) can be written representation- and domain-agnostically:
+   *   - array-of-pointers leaf : unpack the pointee's canonical value;
+   *   - complex contiguous cell: return an IvyComplex built from (Re, Im);
+   *   - real cell / arithmetic : return the reduced arithmetic value.
+   */
+  template<typename E>
+  __HOST__ auto tensor_read_canonical(E const& e){
+    if constexpr (is_pointer_v<E>){
+      using inner_t = typename E::element_type;
+      return unpack_function_input_reduced<inner_t>::get(*e);
+    } else if constexpr (is_complex_v<E>){
+      using rT = typename E::dtype_t;
+      return IvyComplex<rT>(e.Re(), e.Im());
+    } else {
+      return unpack_function_input_reduced<E>::get(e);
+    }
+  }
+
+  /**
+   * @brief Store a canonical value into @c res[i], independent of representation.
+   *
+   * Inverse of @ref tensor_read_canonical:
+   *   - array-of-pointers leaf : wrap the value in a fresh thread-safe pointer;
+   *   - complex contiguous cell: write the (Re, Im) components through the cell ctor
+   *     (the cell is not assignable from an IvyComplex directly);
+   *   - real cell / arithmetic : assign the value directly.
+   */
+  template<typename Tens, typename V>
+  __HOST__ void tensor_store_canonical(Tens& res, IvyTensorDim_t i, V const& val){
+    using dtype_t = typename Tens::dtype_t;
+    if constexpr (is_pointer_v<dtype_t>){
+      using inner_t = typename dtype_t::element_type;
+      constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+      res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, val);
+    } else if constexpr (is_complex_v<dtype_t>){
+      res[i] = dtype_t(val.Re(), val.Im());
+    } else {
+      res[i] = val;
+    }
+  }
+
   /****************/
   /* 1D FUNCTIONS */
   /****************/
@@ -1815,21 +1860,11 @@ namespace IvyMath{
   }
   template<typename T, typename U>
   __HOST__ PowFcnal<T, U, tensor_domain_tag, tensor_domain_tag>::value_t PowFcnal<T, U, tensor_domain_tag, tensor_domain_tag>::eval(T const& x, U const& y){
-    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
     value_t res(x);
     for (IvyTensorDim_t i = 0; i < x.num_elements(); ++i){
-      using x_elem_t = typename T::dtype_t;
-      using y_elem_t = typename U::dtype_t;
-      if constexpr (is_pointer_v<x_elem_t> && is_pointer_v<y_elem_t>){
-        using inner_t = typename x_elem_t::element_type;
-        auto const xv = unpack_function_input_reduced<inner_t>::get(*x[i]);
-        auto const yv = unpack_function_input_reduced<typename y_elem_t::element_type>::get(*y[i]);
-        res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, Pow(xv, yv));
-      } else if constexpr (!is_pointer_v<x_elem_t> && !is_pointer_v<y_elem_t>){
-        auto const xv = unpack_function_input_reduced<x_elem_t>::get(x[i]);
-        auto const yv = unpack_function_input_reduced<y_elem_t>::get(y[i]);
-        res[i] = Pow(xv, yv);
-      }
+      auto const xv = tensor_read_canonical(x[i]);
+      auto const yv = tensor_read_canonical(y[i]);
+      tensor_store_canonical(res, i, Pow(xv, yv));
     }
     return res;
   }
@@ -1840,79 +1875,46 @@ namespace IvyMath{
     constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
     value_t res(*x);
     for (IvyTensorDim_t i = 0; i < (*x).num_elements(); ++i){
-      using x_elem_t = typename X_t::dtype_t;
-      using y_elem_t = typename Y_t::dtype_t;
-      if constexpr (is_pointer_v<x_elem_t> && is_pointer_v<y_elem_t>){
-        using inner_t = typename x_elem_t::element_type;
-        auto const xv = unpack_function_input_reduced<inner_t>::get(*(*x)[i]);
-        auto const yv = unpack_function_input_reduced<typename y_elem_t::element_type>::get(*(*y)[i]);
-        std_ttraits::remove_const_t<decltype(xv)> gval{};
-        if (ivar == 0){
-          gval = yv * Pow(xv, yv - One<decltype(yv)>());
-        } else {
-          gval = Log(xv) * Pow(xv, yv);
-        }
-        res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, gval);
-      } else if constexpr (!is_pointer_v<x_elem_t> && !is_pointer_v<y_elem_t>){
-        auto const xv = unpack_function_input_reduced<x_elem_t>::get((*x)[i]);
-        auto const yv = unpack_function_input_reduced<y_elem_t>::get((*y)[i]);
-        if (ivar == 0) res[i] = yv * Pow(xv, yv - One<decltype(yv)>());
-        else res[i] = Log(xv) * Pow(xv, yv);
-      }
+      auto const xv = tensor_read_canonical((*x)[i]);
+      auto const yv = tensor_read_canonical((*y)[i]);
+      using rt = fundamental_data_t<decltype(yv)>;
+      if (ivar == 0) tensor_store_canonical(res, i, yv * Pow(xv, yv - One<rt>()));
+      else           tensor_store_canonical(res, i, Log(xv) * Pow(xv, yv));
     }
     return make_IvyThreadSafePtr<value_t>(def_mem_type, nullptr, res);
   }
   template<typename T, typename U>
   __HOST__ PowFcnal<T, U, tensor_domain_tag, arithmetic_domain_tag>::value_t PowFcnal<T, U, tensor_domain_tag, arithmetic_domain_tag>::eval(T const& x, U const& y){
-    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
     value_t res(x);
     for (IvyTensorDim_t i = 0; i < x.num_elements(); ++i){
-      if constexpr (is_pointer_v<dtype_t>){
-        using inner_t = typename dtype_t::element_type;
-        auto const xv = unpack_function_input_reduced<inner_t>::get(*x[i]);
-        res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, Pow(xv, static_cast<decltype(xv)>(y)));
-      } else {
-        auto const xv = unpack_function_input_reduced<dtype_t>::get(x[i]);
-        res[i] = Pow(xv, static_cast<decltype(xv)>(y));
-      }
+      auto const xv = tensor_read_canonical(x[i]);
+      using rt = fundamental_data_t<decltype(xv)>;
+      tensor_store_canonical(res, i, Pow(xv, static_cast<rt>(y)));
     }
     return res;
   }
   template<typename T, typename U> template<typename X_t, typename Y_t>
   __HOST__ IvyThreadSafePtr_t<typename PowFcnal<T, U, tensor_domain_tag, arithmetic_domain_tag>::value_t> PowFcnal<T, U, tensor_domain_tag, arithmetic_domain_tag>::gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y){
-    // gradient wrt tensor x: y * x^(y-1)
-    // gradient wrt scalar y: undefined (no graph node for arithmetic)
+    // gradient wrt tensor x: y * x^(y-1); wrt scalar y: undefined (no graph node).
     constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
     value_t res(*x);
     if (ivar == 0){
       for (IvyTensorDim_t i = 0; i < (*x).num_elements(); ++i){
-        if constexpr (is_pointer_v<dtype_t>){
-          using inner_t = typename dtype_t::element_type;
-          auto const xv = unpack_function_input_reduced<inner_t>::get(*(*x)[i]);
-          auto const yv = static_cast<decltype(xv)>(*y);
-          res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, yv * Pow(xv, yv - One<decltype(yv)>()));
-        } else {
-          auto const xv = unpack_function_input_reduced<dtype_t>::get((*x)[i]);
-          auto const yv = static_cast<decltype(xv)>(*y);
-          res[i] = yv * Pow(xv, yv - One<decltype(yv)>());
-        }
+        auto const xv = tensor_read_canonical((*x)[i]);
+        using rt = fundamental_data_t<decltype(xv)>;
+        auto const yv = static_cast<rt>(*y);
+        tensor_store_canonical(res, i, yv * Pow(xv, yv - One<rt>()));
       }
     }
     return make_IvyThreadSafePtr<value_t>(def_mem_type, nullptr, res);
   }
   template<typename T, typename U>
   __HOST__ PowFcnal<T, U, arithmetic_domain_tag, tensor_domain_tag>::value_t PowFcnal<T, U, arithmetic_domain_tag, tensor_domain_tag>::eval(T const& x, U const& y){
-    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
     value_t res(y);
     for (IvyTensorDim_t i = 0; i < y.num_elements(); ++i){
-      if constexpr (is_pointer_v<dtype_t>){
-        using inner_t = typename dtype_t::element_type;
-        auto const yv = unpack_function_input_reduced<inner_t>::get(*y[i]);
-        res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, Pow(static_cast<decltype(yv)>(x), yv));
-      } else {
-        auto const yv = unpack_function_input_reduced<dtype_t>::get(y[i]);
-        res[i] = Pow(static_cast<decltype(yv)>(x), yv);
-      }
+      auto const yv = tensor_read_canonical(y[i]);
+      using rt = fundamental_data_t<decltype(yv)>;
+      tensor_store_canonical(res, i, Pow(static_cast<rt>(x), yv));
     }
     return res;
   }
@@ -1923,16 +1925,10 @@ namespace IvyMath{
     value_t res(*y);
     if (ivar == 1){
       for (IvyTensorDim_t i = 0; i < (*y).num_elements(); ++i){
-        if constexpr (is_pointer_v<dtype_t>){
-          using inner_t = typename dtype_t::element_type;
-          auto const xv = static_cast<fundamental_data_t<typename inner_t::value_t>>(*x);
-          auto const yv = unpack_function_input_reduced<inner_t>::get(*(*y)[i]);
-          res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, Log(xv) * Pow(xv, yv));
-        } else {
-          auto const xv = static_cast<fundamental_data_t<dtype_t>>(*x);
-          auto const yv = unpack_function_input_reduced<dtype_t>::get((*y)[i]);
-          res[i] = Log(xv) * Pow(xv, yv);
-        }
+        auto const yv = tensor_read_canonical((*y)[i]);
+        using rt = fundamental_data_t<decltype(yv)>;
+        auto const xv = static_cast<rt>(*x);
+        tensor_store_canonical(res, i, Log(xv) * Pow(xv, yv));
       }
     }
     return make_IvyThreadSafePtr<value_t>(def_mem_type, nullptr, res);

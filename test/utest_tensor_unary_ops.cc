@@ -149,6 +149,14 @@ static void run_complex_suite(char const* tag, Tptr const& t, std::complex<doubl
   val_op(Sqrt(t), [&]{ return std::sqrt(z); }, "Sqrt");
   val_op(SinH(t), [&]{ return std::sinh(z); }, "SinH");
   val_op(CosH(t), [&]{ return std::cosh(z); }, "CosH");
+
+  // Binary power on complex-cell tensors (eager value): both operands must read
+  // through the complex domain. t^t, t^scalar, and scalar^t.
+  {
+    check(all_cx(Pow(*t, *t),  [&]{ return std::pow(z, z);   }, 1e-9), "Pow(t, t) value (complex)");
+    check(all_cx(Pow(*t, 2.0), [&]{ return std::pow(z, 2.0); }, 1e-9), "Pow(t, 2) value (complex)");
+    check(all_cx(Pow(2.0, *t), [&]{ return std::pow(2.0, z); }, 1e-9), "Pow(2, t) value (complex)");
+  }
 }
 
 
