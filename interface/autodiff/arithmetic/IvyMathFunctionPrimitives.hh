@@ -61,6 +61,22 @@ namespace IvyMath{
   template<typename Evaluator>
   inline constexpr bool evaluator_is_order_aware_v = evaluator_is_order_aware<Evaluator>::value;
 
+  /**
+   * @brief Trait detecting a reduction evaluator (tensor -> scalar), e.g. Sum.
+   *
+   * A reduction contracts a tensor operand into a scalar/complex value, so its
+   * gradient is NOT the element-wise chain rule used for tensor->tensor maps:
+   * d(reduce(t))/dvar = reduce(dt/dvar). Such evaluators opt in by declaring the
+   * marker typedef @c reduction_tag; IvyRegularFunction_1D::gradient then sums the
+   * recursed operand-gradient tensor into a single scalar value node.
+   */
+  template<typename Evaluator, typename = void>
+  struct evaluator_is_reduction : std_ttraits::false_type{};
+  template<typename Evaluator>
+  struct evaluator_is_reduction<Evaluator, std_ttraits::void_t<typename Evaluator::reduction_tag>> : std_ttraits::true_type{};
+  template<typename Evaluator>
+  inline constexpr bool evaluator_is_reduction_v = evaluator_is_reduction<Evaluator>::value;
+
   /*
   IvyRegularFunction_1D:
   This is a master class for regular 1D functions.

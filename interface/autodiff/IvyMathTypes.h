@@ -63,7 +63,13 @@ namespace IvyMath{
       >
     >;
   };
-  template<typename T, typename U> using more_precise_t = typename more_precise<T, U>::type;
+  // Unpack function operands to their value types before comparing precision: a
+  // function whose value is a tensor must be treated as that tensor, otherwise the
+  // tensor partial specializations below (keyed on a *syntactic* IvyTensor<...>)
+  // would treat the function as a scalar and wrap its already-tensor result in a
+  // second IvyTensor (e.g. (t*s)+t -> IvyTensor<IvyTensor<double>>). unpack is the
+  // identity on non-function types, so scalar/complex results are unchanged.
+  template<typename T, typename U> using more_precise_t = typename more_precise<unpack_if_function_t<T>, unpack_if_function_t<U>>::type;
 
   // The precision-reduced form of more_precise is only needed for functions.
   template<typename T, typename U> struct more_precise_reduced{
@@ -75,7 +81,7 @@ namespace IvyMath{
     using vtype_U = reduced_value_t<ctype_U>;
     using type = reduced_value_t<more_precise_t<vtype_T, vtype_U>>;
   };
-  template<typename T, typename U> using more_precise_reduced_t = typename more_precise_reduced<T, U>::type;
+  template<typename T, typename U> using more_precise_reduced_t = typename more_precise_reduced<unpack_if_function_t<T>, unpack_if_function_t<U>>::type;
 
   // Structs to elevate pointers to functions
   template<typename T> struct elevateToRealFcnPtr_if_ptr{ using type = reduced_value_t<convert_to_real_t<T>>; };
@@ -108,9 +114,27 @@ namespace IvyMath{
   template<typename T, typename U> struct more_precise<T, IvyTensor<U>>{ using type = IvyTensor< more_precise_t<T, U> >; };
   template<typename T, typename U> struct more_precise<IvyTensor<T>, U>{ using type = IvyTensor< more_precise_t<T, U> >; };
   template<typename T, typename U> struct more_precise<IvyTensor<T>, IvyTensor<U>>{ using type = IvyTensor< more_precise_t<T, U> >; };
+  // Pointer-peeling for the array-of-pointers tensor representation (see more_precise_reduced below).
+  template<typename T, std_mem::IvyPointerType IPT, typename U>
+  struct more_precise<std_mem::IvyUnifiedPtr<T, IPT>, U> : more_precise<T, U>{};
+  template<typename T, typename U, std_mem::IvyPointerType IPT>
+  struct more_precise<T, std_mem::IvyUnifiedPtr<U, IPT>> : more_precise<T, U>{};
+  template<typename T, std_mem::IvyPointerType IPTa, typename U, std_mem::IvyPointerType IPTb>
+  struct more_precise<std_mem::IvyUnifiedPtr<T, IPTa>, std_mem::IvyUnifiedPtr<U, IPTb>> : more_precise<T, U>{};
   template<typename T, typename U> struct more_precise_reduced<T, IvyTensor<U>>{ using type = IvyTensor< more_precise_reduced_t<T, U> >; };
   template<typename T, typename U> struct more_precise_reduced<IvyTensor<T>, U>{ using type = IvyTensor< more_precise_reduced_t<T, U> >; };
   template<typename T, typename U> struct more_precise_reduced<IvyTensor<T>, IvyTensor<U>>{ using type = IvyTensor< more_precise_reduced_t<T, U> >; };
+
+  // Pointer-peeling: a tensor element may itself be a pointer to a leaf node
+  // (the array-of-pointers representation IvyTensor<IvyScalarPtr_t<T>>). Reduce a
+  // pointer operand to its pointee so precision is computed on the value type
+  // (e.g. IvyScalar<double> -> double) rather than the raw pointer.
+  template<typename T, std_mem::IvyPointerType IPT, typename U>
+  struct more_precise_reduced<std_mem::IvyUnifiedPtr<T, IPT>, U> : more_precise_reduced<T, U>{};
+  template<typename T, typename U, std_mem::IvyPointerType IPT>
+  struct more_precise_reduced<T, std_mem::IvyUnifiedPtr<U, IPT>> : more_precise_reduced<T, U>{};
+  template<typename T, std_mem::IvyPointerType IPTa, typename U, std_mem::IvyPointerType IPTb>
+  struct more_precise_reduced<std_mem::IvyUnifiedPtr<T, IPTa>, std_mem::IvyUnifiedPtr<U, IPTb>> : more_precise_reduced<T, U>{};
 
 }
 

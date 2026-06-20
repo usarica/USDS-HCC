@@ -424,6 +424,26 @@ namespace IvyMath{
     return res;
   }
 
+  // SUM (tensor -> scalar reduction)
+  template<typename T>
+  __HOST__ typename SumFcnal<T>::value_t SumFcnal<T>::eval(T const& x){
+    dtype_t acc = dtype_t(0);
+    for (IvyTensorDim_t i = 0; i < x.num_elements(); ++i){
+      if constexpr (is_pointer_v<elem_t>) acc += unpack_function_input_reduced<typename elem_t::element_type>::get(*x[i]);
+      else acc += unpack_function_input_reduced<elem_t>::get(x[i]);
+    }
+    return value_t(acc);
+  }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && is_tensor_v<T>)>
+  __HOST__ typename SumFcnal<T>::value_t Sum(T const& x){ return SumFcnal<T>::eval(x); }
+  template<typename T, ENABLE_IF_BOOL_IMPL(is_pointer_v<T>)>
+  __HOST__ IvyThreadSafePtr_t<typename IvySum<typename T::element_type>::base_t> Sum(T const& x){
+    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    auto res = make_IvyThreadSafePtr<IvySum<typename T::element_type>>(def_mem_type, nullptr, IvySum(x));
+    add_fcn_to_clients(res, x);
+    return res;
+  }
+
   // LOG (NATURAL LOG)
   template<typename T, typename domain_tag>
   __HOST_DEVICE__ LogFcnal<T, domain_tag>::value_t LogFcnal<T, domain_tag>::eval(T const& x){ return std_math::log(x); }
@@ -1497,22 +1517,34 @@ namespace IvyMath{
     // grad_y acts from the right (left-multiplied by x).
     return grad_x * y + x * grad_y;
   }
-  template<typename T, typename U>
-  __HOST__ MultiplyFcnal<T, U, tensor_domain_tag, tensor_domain_tag>::value_t MultiplyFcnal<T, U, tensor_domain_tag, tensor_domain_tag>::eval(T const& x, U const& y){
-    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
-    value_t res(x);
-    for (IvyTensorDim_t i = 0; i < x.num_elements(); ++i){
-      using x_elem_t = typename T::dtype_t;
-      using y_elem_t = typename U::dtype_t;
-      if constexpr (is_pointer_v<x_elem_t> && is_pointer_v<y_elem_t>){
-        using inner_t = typename x_elem_t::element_type;
-        fndtype_t const xval = unpack_function_input_reduced<inner_t>::get(*x[i]);
-        fndtype_t const yval = unpack_function_input_reduced<typename y_elem_t::element_type>::get(*y[i]);
-        res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, xval * yval);
-      } else if constexpr (!is_pointer_v<x_elem_t> && !is_pointer_v<y_elem_t>){
-        res[i] = x[i] * y[i];
+  // Tensor-domain binary element-wise ops. The function output is the *reduced*
+  // value tensor (e.g. IvyTensor<double>) regardless of whether the operands are
+  // array-of-pointers (IvyTensor<IvyScalarPtr_t>) or contiguous cells
+  // (IvyTensor<IvyTensorScalarCell>), matching the function's precision_type =
+  // more_precise_reduced_t<T,U>. Each operand element is unpacked to its
+  // fundamental value and combined element-wise.
+  // Element-wise binary tensor op shared implementation (tensor⊗tensor and tensor⊗scalar with
+  // broadcast). The function output is the *reduced* value tensor (e.g. IvyTensor<double>, or
+  // IvyTensor<IvyComplex<double>> under real⊗complex up-casting) regardless of whether the operands
+  // are array-of-pointers (IvyTensor<IvyScalarPtr_t>), contiguous cells (IvyTensor<IvyTensorScalarCell>),
+  // or a broadcast scalar leaf (real/arithmetic/complex). Each operand element is unpacked to its
+  // reduced value and combined element-wise via OpTag::combine; a scalar operand is broadcast.
+  template<typename OpTag, typename T, typename U>
+  __HOST__ typename IvyTensorBinaryFcnal<OpTag, T, U>::value_t IvyTensorBinaryFcnal<OpTag, T, U>::eval(T const& x, U const& y){
+    constexpr bool x_is_tensor = is_tensor_v<T>;
+    auto read = [](auto const& operand, IvyTensorDim_t i){
+      using P = std_ttraits::remove_cv_t<std_ttraits::remove_reference_t<decltype(operand)>>;
+      if constexpr (is_tensor_v<P>){
+        using elem = typename P::dtype_t;
+        if constexpr (is_pointer_v<elem>) return unpack_function_input_reduced<typename elem::element_type>::get(*operand[i]);
+        else return unpack_function_input_reduced<elem>::get(operand[i]);
       }
-    }
+      else return unpack_function_input_reduced<P>::get(operand);
+    };
+    IvyTensorShape const& shape = [&]() -> IvyTensorShape const&{ if constexpr (x_is_tensor) return x.shape(); else return y.shape(); }();
+    value_t res(shape);
+    IvyTensorDim_t const n = res.num_elements();
+    for (IvyTensorDim_t i = 0; i < n; ++i) res[i] = OpTag::combine(read(x, i), read(y, i));
     return res;
   }
   template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U> && !is_tensor_v<T> && !is_tensor_v<U>)>

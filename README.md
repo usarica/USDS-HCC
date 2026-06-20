@@ -552,6 +552,51 @@ This avoids instantiating `IvyMultiply<T,T,tensor,tensor>`, whose `gradient()`
 | `Cos(t)` | cos x   | −sin x   |
 | `Negate(t)` or `-t` | −x | −1 |
 
+### 7.6 Tensor binary ops, scalar broadcast, up-casting, and reductions
+
+Tensor-domain autodiff is closed under composition: unary chains, binary
+operations, mixing with scalars, domain up-casting, and reductions all flow
+through the **single** op-definition site (`IvyMathBaseArithmetic`, namespace
+`IvyMath`) and differentiate on **both** representations — the contiguous-cell
+leaf `IvyTensor<IvyTensorScalarCell<T>>` (`TensorScalar<T>`) and the
+array-of-pointers leaf `IvyTensor<IvyScalarPtr_t<T>>`.
+
+- **Unary chains.** `Sin(Exp(t))`, `Log(Sin(Exp(t)))`, … differentiate by the
+  element-wise chain rule.
+- **Binary tensor ⊗ tensor.** `t + u`, `t - u`, `t * u`, `t / u` evaluate and
+  differentiate element-wise (Hadamard); e.g. `∂(t*u)/∂t = u`, `∂(t/u)/∂u = −t/u²`.
+- **Tensor ⊗ scalar (broadcast) with ∂/∂scalar.** A scalar operand — a bare
+  arithmetic value, an `IvyScalar`, or an `IvyComplex` — is broadcast across the
+  tensor, and the scalar is itself a first-class differentiation seed:
+  `∂(s*t)/∂s = t`, `∂(t/s)/∂s = −t/s²`.
+- **Up-casting.** Mixed operand types are promoted via the `more_precise`
+  ladder: `int`-tensor ⊗ `double`-scalar → `double` tensor; real-tensor ⊗
+  `IvyComplex` scalar → `IvyComplex` tensor (value and gradient).
+- **Reductions.** `Sum(t)` contracts a real tensor to a scalar and is
+  differentiable: `d(Sum t)/dvar = Σ_i ∂t_i/∂var`, so `Sum(s*t)->gradient(s)`
+  gives `Sum(t)` and `Sum(Exp(t))->gradient(t)` gives `Σ_i exp(t_i)`.
+
+The binary/scalar/reduction outputs are the *reduced* value tensor
+(`IvyTensor<double>`, or `IvyTensor<IvyComplex<double>>` under real⊗complex
+up-casting); unary ops preserve the operand's element representation. Internally,
+binary tensor gradients use a single op-specific directional-derivative combine
+(`evaluator_t::dcombine`) over a unified, broadcast-aware element reader, and
+reductions are detected via the `reduction_tag` marker on the evaluator.
+
+```cpp
+auto t = TensorScalar<double>(mem, st, shape, IvyTensorScalarCell<double>(2.0));
+auto s = Scalar<double>(IvyMemoryType::Host, nullptr, 5.0);
+IvyThreadSafePtr_t<IvyBaseNode> tn(t), sn(s);
+
+auto f  = s * t;            // broadcast: every element = 10
+auto gt = f->gradient(tn);  // ∂(s*t)/∂t = s = 5   (per element)
+auto gs = f->gradient(sn);  // ∂(s*t)/∂s = t = 2   (per element)
+
+auto r  = Sum(s * t);            // scalar 60
+auto rs = r->gradient(sn);       // d Sum(s*t)/ds = Sum(t) = 12
+```
+
+
 ---
 
 ## 8. Memory Domains

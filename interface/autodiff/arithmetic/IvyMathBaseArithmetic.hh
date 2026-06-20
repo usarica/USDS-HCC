@@ -351,6 +351,42 @@ namespace IvyMath{
   template<typename T, ENABLE_IF_BOOL(is_pointer_v<T>)>
   __HOST__ IvyThreadSafePtr_t<typename IvyExp<typename T::element_type>::base_t> Exp(T const& x);
 
+  // SUM (tensor -> scalar reduction)
+  /**
+   * @brief Differentiable sum reduction of a (real-domain) tensor to a scalar.
+   *
+   * value = Σ_i t_i ; the gradient is the same reduction applied to the operand
+   * gradient: d(Sum t)/dvar = Σ_i ∂t_i/∂var (a scalar), which makes Sum a
+   * first-class differentiation node wrt any scalar/function seed the tensor
+   * depends on (and wrt the Sum node itself, giving 1). Supports both the
+   * contiguous-cell (IvyTensor<IvyTensorScalarCell>) and array-of-pointers
+   * (IvyTensor<IvyScalarPtr_t>) real representations. Complex-tensor reduction is
+   * a future extension.
+   */
+  template<typename E> struct sum_elem_value{ using type = reduced_value_t<E>; };
+  template<typename E, std_mem::IvyPointerType P> struct sum_elem_value<std_mem::IvyUnifiedPtr<E, P>>{ using type = reduced_value_t<E>; };
+  template<typename T> struct SumFcnal{
+    using elem_t = typename T::dtype_t;
+    using elem_value_t = typename sum_elem_value<elem_t>::type;
+    using fndtype_t = fundamental_data_t<elem_value_t>;
+    using value_t = minimal_fcn_output_t<fndtype_t, get_domain_t<elem_value_t>, leaf_value_tag>;
+    using dtype_t = reduced_data_t<value_t>;
+    using reduction_tag = void; ///< marks this evaluator as a reduction (see evaluator_is_reduction)
+    static __HOST__ value_t eval(T const& x);
+  };
+  template<typename T> using IvySum = IvyRegularFunction_1D<
+    T, SumFcnal<unpack_if_function_t<T>>,
+    reduced_data_t<typename SumFcnal<unpack_if_function_t<T>>::value_t>,
+    get_domain_t<typename SumFcnal<unpack_if_function_t<T>>::value_t>,
+    get_domain_t<typename SumFcnal<unpack_if_function_t<T>>::value_t>
+  >;
+  /// @brief Non-pointer (direct value) sum of a tensor. Host-only.
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && is_tensor_v<T>)>
+  __INLINE_FCN_FORCE__ __HOST__ typename SumFcnal<T>::value_t Sum(T const& x);
+  /// @brief Construct a lazy Sum reduction node for autodiff. Host-only.
+  template<typename T, ENABLE_IF_BOOL(is_pointer_v<T>)>
+  __HOST__ IvyThreadSafePtr_t<typename IvySum<typename T::element_type>::base_t> Sum(T const& x);
+
   // LOG (NATURAL LOG)
   template<typename T, typename domain_tag = get_domain_t<T>> struct LogFcnal{
     using value_t = unpacked_reduced_value_t<T>;
@@ -946,6 +982,56 @@ namespace IvyMath{
   /* 2D FUNCTIONS */
   /****************/
 
+  /**
+   * @brief Operation tags for the shared element-wise binary tensor functional. Each tag supplies
+   *        the value-level @c combine (used by the broadcast-aware @c eval) and the
+   *        directional-derivative @c dcombine (used by the eager tensor chain rule in
+   *        IvyRegularFunction_2D::gradient). Keeping these here means the per-op math lives in
+   *        exactly one place and is shared across the tensor⊗tensor and tensor⊗scalar specializations.
+   */
+  struct ivy_tensor_add_op{
+    template<typename A, typename B> static __INLINE_FCN_FORCE__ __HOST__ auto combine(A const& a, B const& b){ return a + b; }
+    template<typename XV, typename YV, typename GXV, typename GYV> static __INLINE_FCN_FORCE__ __HOST__ auto dcombine(XV const&, YV const&, GXV const& gxv, GYV const& gyv){ return gxv + gyv; }
+  };
+  struct ivy_tensor_subtract_op{
+    template<typename A, typename B> static __INLINE_FCN_FORCE__ __HOST__ auto combine(A const& a, B const& b){ return a - b; }
+    template<typename XV, typename YV, typename GXV, typename GYV> static __INLINE_FCN_FORCE__ __HOST__ auto dcombine(XV const&, YV const&, GXV const& gxv, GYV const& gyv){ return gxv - gyv; }
+  };
+  struct ivy_tensor_multiply_op{
+    template<typename A, typename B> static __INLINE_FCN_FORCE__ __HOST__ auto combine(A const& a, B const& b){ return a * b; }
+    template<typename XV, typename YV, typename GXV, typename GYV> static __INLINE_FCN_FORCE__ __HOST__ auto dcombine(XV const& xv, YV const& yv, GXV const& gxv, GYV const& gyv){ return yv*gxv + xv*gyv; }
+  };
+  struct ivy_tensor_divide_op{
+    template<typename A, typename B> static __INLINE_FCN_FORCE__ __HOST__ auto combine(A const& a, B const& b){ return a / b; }
+    template<typename XV, typename YV, typename GXV, typename GYV> static __INLINE_FCN_FORCE__ __HOST__ auto dcombine(XV const& xv, YV const& yv, GXV const& gxv, GYV const& gyv){ return gxv/yv - (xv*gyv)/(yv*yv); }
+  };
+  /**
+   * @brief Shared implementation of element-wise binary tensor operations covering both
+   *        tensor⊗tensor and tensor⊗scalar (with broadcast). The function output is always the
+   *        reduced value tensor @c more_precise_reduced_t<T,U> (e.g. @c IvyTensor<double> or, under
+   *        real⊗complex up-casting, @c IvyTensor<IvyComplex<double>>) regardless of whether the
+   *        operands are array-of-pointers, contiguous cells, or a broadcast scalar leaf. @c eval is
+   *        defined in IvyMathBaseArithmetic.h; @c dcombine forwards to the op tag.
+   */
+  template<typename OpTag, typename T, typename U> struct IvyTensorBinaryFcnal{
+    using value_t = more_precise_reduced_t<T, U>;
+    using dtype_t = typename value_t::dtype_t;
+    using fndtype_t = fundamental_data_t<dtype_t>;
+    static __HOST__ value_t eval(T const& x, U const& y);
+    template<typename XV, typename YV, typename GXV, typename GYV>
+    static __INLINE_FCN_FORCE__ __HOST__ auto dcombine(XV const& xv, YV const& yv, GXV const& gxv, GYV const& gyv){ return OpTag::dcombine(xv, yv, gxv, gyv); }
+  };
+  /// @brief Generate the tensor⊗tensor and tensor⊗scalar (real/arithmetic/complex, both orders)
+  ///        specializations of a binary functional, all delegating to the shared implementation.
+#define IVY_DECL_TENSOR_BINOP_FCNAL(FCNAL, OPTAG) \
+  template<typename T, typename U> struct FCNAL<T, U, tensor_domain_tag, tensor_domain_tag> : IvyTensorBinaryFcnal<OPTAG, T, U>{}; \
+  template<typename T, typename U> struct FCNAL<T, U, real_domain_tag, tensor_domain_tag> : IvyTensorBinaryFcnal<OPTAG, T, U>{}; \
+  template<typename T, typename U> struct FCNAL<T, U, tensor_domain_tag, real_domain_tag> : IvyTensorBinaryFcnal<OPTAG, T, U>{}; \
+  template<typename T, typename U> struct FCNAL<T, U, arithmetic_domain_tag, tensor_domain_tag> : IvyTensorBinaryFcnal<OPTAG, T, U>{}; \
+  template<typename T, typename U> struct FCNAL<T, U, tensor_domain_tag, arithmetic_domain_tag> : IvyTensorBinaryFcnal<OPTAG, T, U>{}; \
+  template<typename T, typename U> struct FCNAL<T, U, complex_domain_tag, tensor_domain_tag> : IvyTensorBinaryFcnal<OPTAG, T, U>{}; \
+  template<typename T, typename U> struct FCNAL<T, U, tensor_domain_tag, complex_domain_tag> : IvyTensorBinaryFcnal<OPTAG, T, U>{};
+
   // ADDITION
   template<typename T, typename U, typename domain_T = get_domain_t<T>, typename domain_U = get_domain_t<U>> struct AddFcnal{
     using value_t = more_precise_reduced_t<T, U>;
@@ -1023,6 +1109,7 @@ namespace IvyMath{
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
   };
+  IVY_DECL_TENSOR_BINOP_FCNAL(AddFcnal, ivy_tensor_add_op)
   template<typename T, typename U> using IvyAdd = IvyRegularFunction_2D<T, U, AddFcnal<unpack_if_function_t<T>, unpack_if_function_t<U>>>;
   template<typename T, typename U, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_pointer_v<U>)>
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename AddFcnal<T, U>::value_t Add(T const& x, U const& y);
@@ -1116,6 +1203,7 @@ namespace IvyMath{
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
   };
+  IVY_DECL_TENSOR_BINOP_FCNAL(SubtractFcnal, ivy_tensor_subtract_op)
   template<typename T, typename U> using IvySubtract = IvyRegularFunction_2D<T, U, SubtractFcnal<unpack_if_function_t<T>, unpack_if_function_t<U>>>;
   template<typename T, typename U, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_pointer_v<U>)>
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename SubtractFcnal<T, U>::value_t Subtract(T const& x, U const& y);
@@ -1232,12 +1320,7 @@ namespace IvyMath{
    * Computes the Hadamard (element-wise) product.  Each output element is the
    * scalar product of the corresponding elements in @p x and @p y.
    */
-  template<typename T, typename U> struct MultiplyFcnal<T, U, tensor_domain_tag, tensor_domain_tag>{
-    using value_t = T;
-    using dtype_t = typename T::dtype_t;
-    using fndtype_t = fundamental_data_t<dtype_t>;
-    static __HOST__ value_t eval(T const& x, U const& y);
-  };
+  IVY_DECL_TENSOR_BINOP_FCNAL(MultiplyFcnal, ivy_tensor_multiply_op)
   template<typename T, typename U> using IvyMultiply = IvyRegularFunction_2D<T, U, MultiplyFcnal<unpack_if_function_t<T>, unpack_if_function_t<U>>>;
   template<typename T, typename U, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_pointer_v<U> && !is_tensor_v<T> && !is_tensor_v<U>)>
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename MultiplyFcnal<T, U>::value_t Multiply(T const& x, U const& y);
@@ -1344,6 +1427,7 @@ namespace IvyMath{
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
   };
+  IVY_DECL_TENSOR_BINOP_FCNAL(DivideFcnal, ivy_tensor_divide_op)
   template<typename T, typename U> using IvyDivide = IvyRegularFunction_2D<T, U, DivideFcnal<unpack_if_function_t<T>, unpack_if_function_t<U>>>;
   template<typename T, typename U, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_pointer_v<U>)>
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename DivideFcnal<T, U>::value_t Divide(T const& x, U const& y);

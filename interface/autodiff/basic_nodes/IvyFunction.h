@@ -310,7 +310,7 @@ namespace IvyMath{
     }
   };
   // TODO: Even if we specialize for the tensor domain, we also need to subspecialize for functions, pointers, and other types in the operabiility argument.
-  template<typename T> struct function_gradient<T, tensor_domain_tag, get_operability_t<T>>{
+  template<typename T> struct function_gradient<T, tensor_domain_tag, leaf_value_tag>{
     static __HOST__ IvyThreadSafePtr_t<T> get(
       T const& fcn, IvyThreadSafePtr_t<IvyBaseNode> const& var
     ){
@@ -346,11 +346,30 @@ namespace IvyMath{
       return make_IvyThreadSafePtr<T>(var.get_memory_type(), var.gpu_stream(), res);
     }
   };
+  /**
+   * @brief Gradient of a function node (operability @c function_value_tag).
+   *
+   * For scalar/complex function domains this simply delegates to the virtual
+   * @c fcn.gradient(var), returning a function pointer. For a tensor-valued
+   * function (a "function of a tensor", e.g. the inner @c Exp(t) of @c Sin(Exp(t)) )
+   * the chain-rule caller in @c IvyRegularFunction_1D/2D needs a concrete value
+   * tensor it can index element-wise, so we snapshot @c fcn.gradient(var)->value()
+   * into a tensor pointer. The branch is resolved at compile time, so there is a
+   * single specialization keyed on operability (no partial-ordering ambiguity with
+   * the tensor-leaf specialization above, which is keyed on @c leaf_value_tag).
+   */
   template<typename T> struct function_gradient<T, get_domain_t<T>, function_value_tag>{
-    static __HOST__ IvyThreadSafePtr_t<typename T::grad_t> get(
+    static __HOST__ auto get(
       T const& fcn, IvyThreadSafePtr_t<IvyBaseNode> const& var
     ){
-      return fcn.gradient(var);
+      if constexpr (std_ttraits::is_same_v<get_domain_t<T>, tensor_domain_tag>){
+        using value_tensor_t = unpack_if_function_t<T>;
+        constexpr std_ivy::IvyMemoryType mem = IvyMemoryHelpers::get_execution_default_memory();
+        auto grad_fcn = fcn.gradient(var);
+        return make_IvyThreadSafePtr<value_tensor_t>(mem, nullptr, grad_fcn->value());
+      } else {
+        return fcn.gradient(var);
+      }
     }
   };
   template<typename T, std_mem::IvyPointerType IPT>
