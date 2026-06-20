@@ -640,8 +640,18 @@ namespace IvyMath{
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
   };
+  /** @brief Element-wise cotangent for tensor inputs. */
+  template<typename T> struct CotFcnal<T, tensor_domain_tag>{
+    using dtype_t = typename T::dtype_t;
+    using value_t = T;
+    using fndtype_t = fundamental_data_t<dtype_t>;
+    static __HOST__ value_t eval(T const& x);
+    static __HOST__ IvyThreadSafePtr_t<T> gradient(IvyThreadSafePtr_t<T> const& dep);
+  };
   template<typename T> using IvyCot = IvyRegularFunction_1D<T, CotFcnal<unpack_if_function_t<T>>>;
-  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename CotFcnal<T>::value_t Cot(T const& x);
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename CotFcnal<T>::value_t Cot(T const& x);
+  /// @brief Tensor-domain overload — @c __HOST__ only: tensor eval uses host-only STL constructs.
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST__ typename CotFcnal<T>::value_t Cot(T const& x);
   /**
    * @brief Construct a lazy Cot function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -675,8 +685,18 @@ namespace IvyMath{
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
   };
+  /** @brief Element-wise hyperbolic sine for tensor inputs. */
+  template<typename T> struct SinHFcnal<T, tensor_domain_tag>{
+    using dtype_t = typename T::dtype_t;
+    using value_t = T;
+    using fndtype_t = fundamental_data_t<dtype_t>;
+    static __HOST__ value_t eval(T const& x);
+    static __HOST__ IvyThreadSafePtr_t<T> gradient(IvyThreadSafePtr_t<T> const& dep);
+  };
   template<typename T> using IvySinH = IvyRegularFunction_1D<T, SinHFcnal<unpack_if_function_t<T>>>;
-  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename SinHFcnal<T>::value_t SinH(T const& x);
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename SinHFcnal<T>::value_t SinH(T const& x);
+  /// @brief Tensor-domain overload — @c __HOST__ only: tensor eval uses host-only STL constructs.
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST__ typename SinHFcnal<T>::value_t SinH(T const& x);
   /**
    * @brief Construct a lazy SinH function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -710,8 +730,18 @@ namespace IvyMath{
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
   };
+  /** @brief Element-wise hyperbolic cosine for tensor inputs. */
+  template<typename T> struct CosHFcnal<T, tensor_domain_tag>{
+    using dtype_t = typename T::dtype_t;
+    using value_t = T;
+    using fndtype_t = fundamental_data_t<dtype_t>;
+    static __HOST__ value_t eval(T const& x);
+    static __HOST__ IvyThreadSafePtr_t<T> gradient(IvyThreadSafePtr_t<T> const& dep);
+  };
   template<typename T> using IvyCosH = IvyRegularFunction_1D<T, CosHFcnal<unpack_if_function_t<T>>>;
-  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename CosHFcnal<T>::value_t CosH(T const& x);
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename CosHFcnal<T>::value_t CosH(T const& x);
+  /// @brief Tensor-domain overload — @c __HOST__ only: tensor eval uses host-only STL constructs.
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST__ typename CosHFcnal<T>::value_t CosH(T const& x);
   /**
    * @brief Construct a lazy CosH function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -790,8 +820,18 @@ namespace IvyMath{
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
   };
+  /** @brief Element-wise complementary error function for tensor inputs. */
+  template<typename T> struct ErfcFcnal<T, tensor_domain_tag>{
+    using dtype_t = typename T::dtype_t;
+    using value_t = T;
+    using fndtype_t = fundamental_data_t<dtype_t>;
+    static __HOST__ value_t eval(T const& x);
+    static __HOST__ IvyThreadSafePtr_t<T> gradient(IvyThreadSafePtr_t<T> const& dep);
+  };
   template<typename T> using IvyErfc = IvyRegularFunction_1D<T, ErfcFcnal<unpack_if_function_t<T>>>;
-  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename ErfcFcnal<T>::value_t Erfc(T const& x);
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename ErfcFcnal<T>::value_t Erfc(T const& x);
+  /// @brief Tensor-domain overload — @c __HOST__ only: tensor eval uses host-only STL constructs.
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST__ typename ErfcFcnal<T>::value_t Erfc(T const& x);
   /**
    * @brief Construct a lazy Erfc function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -892,8 +932,18 @@ namespace IvyMath{
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
   };
+  /** @brief Element-wise fast error function for tensor inputs. */
+  template<typename T> struct ErfFastFcnal<T, tensor_domain_tag>{
+    using dtype_t = typename T::dtype_t;
+    using value_t = T;
+    using fndtype_t = fundamental_data_t<dtype_t>;
+    static __HOST__ value_t eval(T const& x);
+    static __HOST__ IvyThreadSafePtr_t<T> gradient(IvyThreadSafePtr_t<T> const& dep);
+  };
   template<typename T> using IvyErfFast = IvyRegularFunction_1D<T, ErfFastFcnal<unpack_if_function_t<T>>>;
-  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename ErfFastFcnal<T>::value_t ErfFast(T const& x);
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename ErfFastFcnal<T>::value_t ErfFast(T const& x);
+  /// @brief Tensor-domain overload — @c __HOST__ only: tensor eval uses host-only STL constructs.
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST__ typename ErfFastFcnal<T>::value_t ErfFast(T const& x);
   /**
    * @brief Construct a lazy ErfFast function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -927,8 +977,18 @@ namespace IvyMath{
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
   };
+  /** @brief Element-wise fast complementary error function for tensor inputs. */
+  template<typename T> struct ErfcFastFcnal<T, tensor_domain_tag>{
+    using dtype_t = typename T::dtype_t;
+    using value_t = T;
+    using fndtype_t = fundamental_data_t<dtype_t>;
+    static __HOST__ value_t eval(T const& x);
+    static __HOST__ IvyThreadSafePtr_t<T> gradient(IvyThreadSafePtr_t<T> const& dep);
+  };
   template<typename T> using IvyErfcFast = IvyRegularFunction_1D<T, ErfcFastFcnal<unpack_if_function_t<T>>>;
-  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename ErfcFastFcnal<T>::value_t ErfcFast(T const& x);
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename ErfcFastFcnal<T>::value_t ErfcFast(T const& x);
+  /// @brief Tensor-domain overload — @c __HOST__ only: tensor eval uses host-only STL constructs.
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST__ typename ErfcFastFcnal<T>::value_t ErfcFast(T const& x);
   /**
    * @brief Construct a lazy ErfcFast function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -962,13 +1022,29 @@ namespace IvyMath{
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
   };
+  /**
+   * @brief Element-wise fast Faddeeva function for tensor inputs (complex-valued output).
+   * @see FaddeevaFcnal<T, tensor_domain_tag> — same complex-output semantics; access
+   *      via the eager path @c FaddeevaFast(*tensor).
+   */
+  template<typename T> struct FaddeevaFastFcnal<T, tensor_domain_tag>{
+    using dtype_t = typename T::dtype_t;
+    using fndtype_t = fundamental_data_t<dtype_t>;
+    using value_t = IvyTensor<convert_to_complex_t<dtype_t>>;
+    using grad_value_t = IvyTensor<convert_to_complex_t<dtype_t>>;
+    using gradient_domain_tag = undefined_domain_tag;
+    static __HOST__ value_t eval(T const& x);
+    static __HOST__ IvyThreadSafePtr_t<grad_value_t> gradient(IvyThreadSafePtr_t<T> const& dep);
+  };
   template<typename T> using IvyFaddeevaFast = IvyRegularFunction_1D<
     T,
     FaddeevaFastFcnal<unpack_if_function_t<T>>,
     unpacked_reduced_value_t< typename FaddeevaFastFcnal<unpack_if_function_t<T>>::value_t >,
     get_domain_t< typename FaddeevaFastFcnal<unpack_if_function_t<T>>::value_t >
   >;
-  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename FaddeevaFastFcnal<T>::value_t FaddeevaFast(T const& x);
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename FaddeevaFastFcnal<T>::value_t FaddeevaFast(T const& x);
+  /// @brief Tensor-domain overload — @c __HOST__ only: tensor eval uses host-only STL constructs.
+  template<typename T, ENABLE_IF_BOOL(!is_pointer_v<T> && is_tensor_v<T>)> __INLINE_FCN_FORCE__ __HOST__ typename FaddeevaFastFcnal<T>::value_t FaddeevaFast(T const& x);
   /**
    * @brief Construct a lazy FaddeevaFast function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use

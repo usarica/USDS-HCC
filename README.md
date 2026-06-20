@@ -370,22 +370,98 @@ auto c = Scalar<double>(IvyMemoryType::Host, nullptr, 3.14);
 
 Template parameter `T` is the numeric type (e.g., `double`, `float`).
 
-### 6.2 `IvyComplex<T>`
+### 6.2 `IvyComplex<T, Chart>`
 
-A complex differentiable leaf. Real and imaginary parts are stored as bare
-`T` components (Cartesian representation).
+A complex differentiable leaf. The optional second template parameter is a
+*representation chart* that fixes how the two real degrees of freedom are stored
+and parametrized (the chart's Jacobian is what enters the gradient projection at
+a leaf). Two charts ship:
+
+| Chart | Storage | DOFs | Notes |
+|-------|---------|------|-------|
+| `complex_cartesian_chart` (default) | `(re, im)` | `(re, im)` | Canonical; identity Jacobian |
+| `complex_polar_chart` | `(r, phi)` | `(r, phi)` | `re = r cos φ`, `im = r sin φ`; singular at `r = 0` |
+
+Canonical accessors `Re()`, `Im()`, `norm()`, `phase()` work the same regardless
+of chart, so all downstream `*Fcnal` ops are chart-agnostic. Function outputs are
+**always** canonical (Cartesian) complex values — non-canonical charts live only
+at user leaves.
 
 ```cpp
-auto z = Complex<double>(IvyMemoryType::Host, nullptr, 1.0, 2.0);
-
+auto z = Complex<double>(IvyMemoryType::Host, nullptr, 1.0, 2.0);   // Cartesian
 double re = z->value().Re();   // 1.0
 double im = z->value().Im();   // 2.0
 
-// Conjugate in place
-// IvyNodeSelfRelations::conjugate(*z);
+// Polar leaf (r = 2, phi = pi/3) via the ComplexChart factory:
+auto zp = ComplexChart<double, complex_polar_chart>(
+    IvyMemoryType::Host, nullptr, 2.0, M_PI/3.0);
 ```
 
-### 6.3 `IvyTensor<T>`
+### 6.3 `IvyQuaternion<T, Chart>` and `IvyVersor`
+
+A Hamilton quaternion differentiable leaf `q = w + x·i + y·j + z·k`, with `w` the
+scalar part and `(x, y, z)` the vector part. The product is **non-commutative**
+(`i·j = k`, `j·i = −k`), which the autodiff layer handles via order-aware
+`*Fcnal` multiply/divide (left vs right action of the chain rule).
+
+```cpp
+auto q = Quaternion<double>(IvyMemoryType::Host, nullptr, 1.0, 2.0, 3.0, 4.0);
+double w = q->value().W();        // 1
+double n = q->value().norm();     // sqrt(30)
+
+auto p   = q * q;                 // Hamilton product (eager value or graph node)
+auto inv = MultInverse(q);        // q^-1 = conj(q)/|q|^2
+auto r   = q / q;                 // right division a/b = a * inv(b)
+auto nm  = Abs(q);                // real scalar = |q| = norm
+```
+
+**Supported quaternion ops** (value + order-aware gradient on the pointer/graph
+path): `+`, `-`, unary `-`/`Negate`, `*` (Hamilton), `/` (right division),
+`MultInverse`, `Abs` (→ real `norm`), and `Conjugate` (negates the vector part).
+Gradients respect order: `∂(q·c)/∂q` acts by right-multiplication by `c`,
+`∂(c·q)/∂q` by left-multiplication by `c`; `∂(q·q)/∂q = 2q`.
+
+**Charts.** Like complex, quaternions carry a representation chart:
+
+| Chart | DOFs | Notes |
+|-------|------|-------|
+| `quaternion_components_chart` (default) | `(w, x, y, z)` | Canonical; identity 4×4 Jacobian |
+| `quaternion_exp_chart` | tangent `(t0, t1, t2, t3)` | `q = exp(t)`; closed-form 4×4 Jacobian, `log` inverse |
+
+**Matrix views** (`IvyQuaternionMatrix.h`). Two physics-standard representations
+are exposed as eager value-level **conversions** `quaternion → IvyTensor` (host):
+
+- `to_complex_matrix(mem, stream, q)` → `IvyTensorPtr_t<IvyComplex<T>>` of shape
+  `{2,2}`, the SU(2)/spin form
+
+  ```
+  [[ a+bi,  c+di],
+   [-c+di,  a-bi]]
+  ```
+
+  with `det = |q|²`, scalar part `= ½ tr`, and `conjugate(q) ↔ conjugate
+  transpose`. Unit quaternions map onto SU(2) (the 3-sphere), the group used for
+  spin in quantum mechanics.
+
+- `to_real_matrix(mem, stream, q)` → `IvyTensorPtr_t<T>` of shape `{4,4}`, the
+  left-Hamilton-multiplication form
+
+  ```
+  [[a,-b,-c,-d],
+   [b, a,-d, c],
+   [c, d, a,-b],
+   [d,-c, b, a]]
+  ```
+
+  with `det = |q|⁴`, scalar part `= ¼ tr`, `conjugate(q) ↔ transpose`, and
+  `M4(p)·vec(r) = vec(p·r)`. This 4×4 form is the natural vehicle for rotations,
+  which are intentionally left to a future physics layer built on this core (a
+  versor is simply a unit quaternion — there is no separate `IvyVersor` type).
+
+> The matrix views are eager value snapshots; differentiating *through* a view
+> (e.g. for rotation Jacobians) is a future physics-library extension.
+
+### 6.4 `IvyTensor<T>`
 
 An N-dimensional array where the element type `T` is typically
 `IvyScalarPtr_t<double>` for an autodiff tensor.
@@ -410,7 +486,7 @@ IvyTensorRank_t r = t->rank();                // 2
 
 `IvyTensorPtr_t<T>` is the corresponding `IvyThreadSafePtr_t<IvyTensor<T>>`.
 
-### 6.4 `IvyFunction<P, Domain, GradientDomain>`
+### 6.5 `IvyFunction<P, Domain, GradientDomain>`
 
 The abstract base class for all computation-graph nodes. Concrete derived
 classes are created by the arithmetic operator functions, not constructed
@@ -427,7 +503,7 @@ Key members:
 `grad_t` = `IvyFunction<P, Domain>` (same domains). `gradient()` returns
 `IvyThreadSafePtr_t<grad_t>`.
 
-### 6.5 Arithmetic operations
+### 6.6 Arithmetic operations
 
 All operations accept both pointer and non-pointer arguments via overloads.
 The pointer overloads register the result in the client-manager graph.
@@ -438,31 +514,43 @@ The pointer overloads register the result in the client-manager graph.
 | `operator-` (unary) | −x      | ✓   | ✓      | ✓      |
 | `operator-`         | x − y   | ✓   | ✓      | ✓      |
 | `operator*`         | x · y   | ✓   | ✓      | ✓      |
-| `operator/`         | x / y   | ✓   | ✓      | ✗      |
+| `operator/`         | x / y   | ✓   | ✓      | ✓      |
 | `Pow(x, y)`         | x^y     | ✓   | ✓      | ✓      |
 | `Exp(x)`            | e^x     | ✓   | ✓      | ✓      |
 | `Log(x)`            | ln x    | ✓   | ✓      | ✓      |
 | `Sin(x)`            | sin x   | ✓   | ✓      | ✓      |
 | `Cos(x)`            | cos x   | ✓   | ✓      | ✓      |
 | `Tan(x)`            | tan x   | ✓   | ✓      | ✓      |
+| `Cot(x)`            | cot x   | ✓   | ✓      | ✓      |
+| `SinH(x)`           | sinh x  | ✓   | ✓      | ✓      |
+| `CosH(x)`           | cosh x  | ✓   | ✓      | ✓      |
 | `Sqrt(x)`           | √x      | ✓   | ✓      | ✓      |
 | `Abs(x)`            | |x|     | ✓   | ✓      | ✓      |
 | `Erf(x)`            | erf(x)  | ✓   | ✓      | ✓      |
+| `Erfc(x)`           | erfc(x) | ✓   | ✓      | ✓      |
+| `ErfFast(x)`        | erf(x)  | ✓   | ✓      | ✓      |
+| `ErfcFast(x)`       | erfc(x) | ✓   | ✓      | ✓      |
 | `Faddeeva(x)`       | w(x)    | ✓   | ✓      | ✓      |
+| `FaddeevaFast(x)`   | w(x)    | ✓   | ✓      | ✓      |
 | `Negate(x)`         | −x      | ✓   | ✓      | ✓      |
 | `MultInverse(x)`    | 1/x     | ✓   | ✓      | ✓      |
 
+The `*Fast` variants (`ErfFast`, `ErfcFast`, `FaddeevaFast`) use a faster, lower
+-precision rational/Padé approximation instead of the full `cerf` series; they
+agree with the exact functions to ~1e-3 and are useful where throughput matters
+more than the last few digits.  `Abs` is value-level only (not differentiable).
+
 The Faddeeva function `w(x) = exp(-x²)·erfc(-ix)` accepts both real and complex
-arguments.  For a real input `x`, it returns a complex-valued result.  This is
-accessed via `Faddeeva(x)` where `x` is an `IvyScalar<T>` or
-`IvyTensor<IvyScalar<T>>`.  The gradient `dw/dz = (2i/√π) − 2z·w(z)` is
-complex-valued even for real input.
+arguments.  For a real input `x`, it returns a complex-valued result (with
+`Re w(x) = exp(-x²)`).  This is accessed via `Faddeeva(x)` where `x` is an
+`IvyScalar<T>`, an `IvyComplex<T>`, or a tensor thereof.  The gradient
+`dw/dz = (2i/√π) − 2z·w(z)` is complex-valued even for real input.
 
 Comparison and logic operators (`==`, `!=`, `<`, `<=`, `>`, `>=`) are
 available for real types but return `bool` — they do **not** participate in
 the gradient graph and have no `gradient()` method.
 
-### 6.6 Gradient of a composition
+### 6.7 Gradient of a composition
 
 Chain-rule propagation is automatic. For example:
 
@@ -544,13 +632,44 @@ This avoids instantiating `IvyMultiply<T,T,tensor,tensor>`, whose `gradient()`
 
 ### 7.5 Supported tensor element-wise functions with gradients
 
-| Function | `f(x)`  | `f'(x)`  |
-|----------|---------|----------|
-| `Exp(t)` | e^x     | e^x      |
-| `Log(t)` | ln x    | 1/x      |
-| `Sin(t)` | sin x   | cos x    |
-| `Cos(t)` | cos x   | −sin x   |
-| `Negate(t)` or `-t` | −x | −1 |
+All element-wise functionals flow through the single op-definition site
+(`IvyMathBaseArithmetic`, namespace `IvyMath`) and work on **both** differentiable
+tensor representations — the contiguous-cell leaf
+`IvyTensor<IvyTensorScalarCell<T>>` (`TensorScalar<T>`) and the array-of-pointers
+leaf `IvyTensor<IvyScalarPtr_t<T>>` (`Tensor<IvyScalarPtr_t<T>>`).
+
+Real-output ops (output preserves the operand's element representation; value and
+element-wise gradient through the lazy graph node):
+
+| Function | `f(x)`   | `f'(x)`                  |
+|----------|----------|--------------------------|
+| `Exp(t)` | e^x      | e^x                      |
+| `Log(t)` | ln x     | 1/x                      |
+| `Sin(t)` | sin x    | cos x                    |
+| `Cos(t)` | cos x    | −sin x                   |
+| `Tan(t)` | tan x    | 1/cos²x                  |
+| `Cot(t)` | cot x    | −1/sin²x                 |
+| `Sqrt(t)`| √x       | 1/(2√x)                  |
+| `SinH(t)`| sinh x   | cosh x                   |
+| `CosH(t)`| cosh x   | sinh x                   |
+| `Erf(t)` | erf x    | (2/√π)·e^(−x²)           |
+| `Erfc(t)`| erfc x   | −(2/√π)·e^(−x²)          |
+| `ErfFast(t)`  | erf x  | (2/√π)·e^(−x²)      |
+| `ErfcFast(t)` | erfc x | −(2/√π)·e^(−x²)     |
+| `Negate(t)` or `-t` | −x | −1                  |
+
+Other tensor functionals:
+
+| Function | Output | Notes |
+|----------|--------|-------|
+| `Abs(*t)` | real tensor | Value-level only (not differentiable) |
+| `Faddeeva(*t)` | complex tensor | Eager value; `Re w(x) = e^(−x²)` for real `x` |
+| `FaddeevaFast(*t)` | complex tensor | Eager value; fast ~1e-3 approximation |
+| `Pow(*t, s)`, `Pow(*t, *u)` | real tensor | Eager value (element-wise `xˢ`, `xᵘ`) |
+
+The complex-output ops (`Faddeeva`, `FaddeevaFast`) and `Pow` are evaluated
+eagerly: because the output domain or arity differs from a simple real lazy node,
+they materialise the value tensor rather than building a lazy graph node.
 
 ### 7.6 Tensor binary ops, scalar broadcast, up-casting, and reductions
 

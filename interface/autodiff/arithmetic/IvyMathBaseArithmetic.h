@@ -17,6 +17,40 @@
 
 
 namespace IvyMath{
+  /**
+   * @brief Apply a scalar callable element-wise over a tensor, preserving its representation.
+   *
+   * Single-source helper for tensor-domain element-wise unary functionals: it
+   * loops over a tensor's elements, unpacks each element to its underlying numeric
+   * value, applies @p fcn, and writes the result back in the operand's
+   * representation (an array-of-pointers leaf or a contiguous cell).  Both the
+   * value path (f(x)) and the gradient path (f'(x)) of an element-wise functional
+   * are expressed by passing the appropriate scalar callable, which keeps each new
+   * op a two-liner instead of a duplicated loop.
+   *
+   * @tparam T    An IvyTensor type whose element type is real-domain.
+   * @tparam Fcn  A scalar callable: numeric value -> numeric value.
+   * @param src   The source tensor.
+   * @param fcn   The scalar map applied to every unpacked element value.
+   * @return      A tensor (same shape/representation as @p src) holding @c fcn(elem).
+   */
+  template<typename T, typename Fcn>
+  __HOST__ T tensor_apply_elementwise(T const& src, Fcn const& fcn){
+    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    using dtype_t = typename T::dtype_t;
+    T res(src);
+    for (IvyTensorDim_t i = 0; i < src.num_elements(); ++i){
+      if constexpr (is_pointer_v<dtype_t>){
+        using inner_t = typename dtype_t::element_type;
+        auto const val = fcn(unpack_function_input_reduced<inner_t>::get(*src[i]));
+        res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, val);
+      } else {
+        res[i] = fcn(unpack_function_input_reduced<dtype_t>::get(src[i]));
+      }
+    }
+    return res;
+  }
+
   /****************/
   /* 1D FUNCTIONS */
   /****************/
@@ -772,7 +806,19 @@ namespace IvyMath{
   __HOST_DEVICE__ CotFcnal<T, domain_tag>::value_t CotFcnal<T, domain_tag>::eval(T const& x){ return Cos(x)/Sin(x); }
   template<typename T, typename domain_tag> template<typename X_t>
   IVY_MATH_GRAPH_QUALIFIER CotFcnal<T, domain_tag>::grad_t CotFcnal<T, domain_tag>::gradient(IvyThreadSafePtr_t<X_t> const& x){ auto r = Csc(x); return -r*r; }
-  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T>)> __HOST_DEVICE__ typename CotFcnal<T>::value_t Cot(T const& x){ return CotFcnal<T>::eval(x); }
+  template<typename T>
+  __HOST__ CotFcnal<T, tensor_domain_tag>::value_t CotFcnal<T, tensor_domain_tag>::eval(T const& x){
+    // f(x) = cot(x) = cos(x)/sin(x)
+    return tensor_apply_elementwise(x, [](auto v){ auto const s = std_math::sin(v); return std_math::cos(v)/s; });
+  }
+  template<typename T>
+  __HOST__ IvyThreadSafePtr_t<T> CotFcnal<T, tensor_domain_tag>::gradient(IvyThreadSafePtr_t<T> const& dep){
+    // f'(x) = -csc^2(x) = -1/sin^2(x)
+    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    return make_IvyThreadSafePtr<T>(def_mem_type, nullptr, tensor_apply_elementwise(*dep, [](auto v){ auto const s = std_math::sin(v); return -One<decltype(v)>()/(s*s); }));
+  }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_tensor_v<T>)> __HOST_DEVICE__ typename CotFcnal<T>::value_t Cot(T const& x){ return CotFcnal<T>::eval(x); }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && is_tensor_v<T>)> __HOST__ typename CotFcnal<T>::value_t Cot(T const& x){ return CotFcnal<T>::eval(x); }
   /**
    * @brief Construct a lazy Cot function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -809,7 +855,19 @@ namespace IvyMath{
   }
   template<typename T> template<typename X_t>
   IVY_MATH_GRAPH_QUALIFIER SinHFcnal<T, complex_domain_tag>::grad_t SinHFcnal<T, complex_domain_tag>::gradient(IvyThreadSafePtr_t<X_t> const& x){ return CosH(x); }
-  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T>)> __HOST_DEVICE__ typename SinHFcnal<T>::value_t SinH(T const& x){ return SinHFcnal<T>::eval(x); }
+  template<typename T>
+  __HOST__ SinHFcnal<T, tensor_domain_tag>::value_t SinHFcnal<T, tensor_domain_tag>::eval(T const& x){
+    // f(x) = sinh(x) = (e^x - e^-x)/2
+    return tensor_apply_elementwise(x, [](auto v){ auto const ev = std_math::exp(v); auto const env = std_math::exp(-v); return (ev - env)/Two<decltype(v)>(); });
+  }
+  template<typename T>
+  __HOST__ IvyThreadSafePtr_t<T> SinHFcnal<T, tensor_domain_tag>::gradient(IvyThreadSafePtr_t<T> const& dep){
+    // f'(x) = cosh(x) = (e^x + e^-x)/2
+    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    return make_IvyThreadSafePtr<T>(def_mem_type, nullptr, tensor_apply_elementwise(*dep, [](auto v){ auto const ev = std_math::exp(v); auto const env = std_math::exp(-v); return (ev + env)/Two<decltype(v)>(); }));
+  }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_tensor_v<T>)> __HOST_DEVICE__ typename SinHFcnal<T>::value_t SinH(T const& x){ return SinHFcnal<T>::eval(x); }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && is_tensor_v<T>)> __HOST__ typename SinHFcnal<T>::value_t SinH(T const& x){ return SinHFcnal<T>::eval(x); }
   /**
    * @brief Construct a lazy SinH function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -848,7 +906,19 @@ namespace IvyMath{
   IVY_MATH_GRAPH_QUALIFIER CosHFcnal<T, complex_domain_tag>::grad_t CosHFcnal<T, complex_domain_tag>::gradient(IvyThreadSafePtr_t<X_t> const& x){
     return SinH(x);
   }
-  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T>)> __HOST_DEVICE__ typename CosHFcnal<T>::value_t CosH(T const& x){ return CosHFcnal<T>::eval(x); }
+  template<typename T>
+  __HOST__ CosHFcnal<T, tensor_domain_tag>::value_t CosHFcnal<T, tensor_domain_tag>::eval(T const& x){
+    // f(x) = cosh(x) = (e^x + e^-x)/2
+    return tensor_apply_elementwise(x, [](auto v){ auto const ev = std_math::exp(v); auto const env = std_math::exp(-v); return (ev + env)/Two<decltype(v)>(); });
+  }
+  template<typename T>
+  __HOST__ IvyThreadSafePtr_t<T> CosHFcnal<T, tensor_domain_tag>::gradient(IvyThreadSafePtr_t<T> const& dep){
+    // f'(x) = sinh(x) = (e^x - e^-x)/2
+    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    return make_IvyThreadSafePtr<T>(def_mem_type, nullptr, tensor_apply_elementwise(*dep, [](auto v){ auto const ev = std_math::exp(v); auto const env = std_math::exp(-v); return (ev - env)/Two<decltype(v)>(); }));
+  }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_tensor_v<T>)> __HOST_DEVICE__ typename CosHFcnal<T>::value_t CosH(T const& x){ return CosHFcnal<T>::eval(x); }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && is_tensor_v<T>)> __HOST__ typename CosHFcnal<T>::value_t CosH(T const& x){ return CosHFcnal<T>::eval(x); }
   /**
    * @brief Construct a lazy CosH function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -953,7 +1023,19 @@ namespace IvyMath{
   IVY_MATH_GRAPH_QUALIFIER ErfcFcnal<T, complex_domain_tag>::grad_t ErfcFcnal<T, complex_domain_tag>::gradient(IvyThreadSafePtr_t<X_t> const& x){
     return -Exp(-x*x)*Scalar<fndtype_t>(x.get_memory_type(), x.gpu_stream(), TwoOverSqrtPi<fndtype_t>());
   }
-  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T>)> __HOST_DEVICE__ typename ErfcFcnal<T>::value_t Erfc(T const& x){ return ErfcFcnal<T>::eval(x); }
+  template<typename T>
+  __HOST__ ErfcFcnal<T, tensor_domain_tag>::value_t ErfcFcnal<T, tensor_domain_tag>::eval(T const& x){
+    // f(x) = erfc(x) = 1 - erf(x)
+    return tensor_apply_elementwise(x, [](auto v){ return std_math::erfc(v); });
+  }
+  template<typename T>
+  __HOST__ IvyThreadSafePtr_t<T> ErfcFcnal<T, tensor_domain_tag>::gradient(IvyThreadSafePtr_t<T> const& dep){
+    // f'(x) = -(2/sqrt(pi)) * exp(-x^2)
+    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    return make_IvyThreadSafePtr<T>(def_mem_type, nullptr, tensor_apply_elementwise(*dep, [](auto v){ return -TwoOverSqrtPi<decltype(v)>()*std_math::exp(-v*v); }));
+  }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_tensor_v<T>)> __HOST_DEVICE__ typename ErfcFcnal<T>::value_t Erfc(T const& x){ return ErfcFcnal<T>::eval(x); }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && is_tensor_v<T>)> __HOST__ typename ErfcFcnal<T>::value_t Erfc(T const& x){ return ErfcFcnal<T>::eval(x); }
   /**
    * @brief Construct a lazy Erfc function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -1012,7 +1094,7 @@ namespace IvyMath{
         auto const rv = unpack_function_input_reduced<dtype_t>::get(x[i]);
         using num_t = std_ttraits::remove_const_t<decltype(rv)>;
         auto const cval = IvyCerf::faddeeva(IvyComplex<num_t>(rv, Zero<num_t>()));
-        res[i] = cval;
+        res[i] = cplx_dtype_t(cval.Re(), cval.Im());
       }
     }
     return res;
@@ -1044,7 +1126,7 @@ namespace IvyMath{
         cval_t const wz = IvyCerf::faddeeva(z);
         cval_t const two_i_over_sqrtpi(Zero<num_t>(), TwoOverSqrtPi<num_t>());
         cval_t const grad_i = two_i_over_sqrtpi - cval_t(Two<num_t>(), Zero<num_t>()) * z * wz;
-        res[i] = grad_i;
+        res[i] = cplx_dtype_t(grad_i.Re(), grad_i.Im());
       }
     }
     return make_IvyThreadSafePtr<grad_value_t>(def_mem_type, nullptr, res);
@@ -1086,7 +1168,19 @@ namespace IvyMath{
   IVY_MATH_GRAPH_QUALIFIER ErfFastFcnal<T, complex_domain_tag>::grad_t ErfFastFcnal<T, complex_domain_tag>::gradient(IvyThreadSafePtr_t<X_t> const& x){
     return Exp(-x*x)*Scalar<fndtype_t>(x.get_memory_type(), x.gpu_stream(), TwoOverSqrtPi<fndtype_t>());
   }
-  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T>)> __HOST_DEVICE__ typename ErfFastFcnal<T>::value_t ErfFast(T const& x){ return ErfFastFcnal<T>::eval(x); }
+  template<typename T>
+  __HOST__ ErfFastFcnal<T, tensor_domain_tag>::value_t ErfFastFcnal<T, tensor_domain_tag>::eval(T const& x){
+    // Real-domain ErfFast coincides with erf; the fast path differs only for complex args.
+    return tensor_apply_elementwise(x, [](auto v){ return std_math::erf(v); });
+  }
+  template<typename T>
+  __HOST__ IvyThreadSafePtr_t<T> ErfFastFcnal<T, tensor_domain_tag>::gradient(IvyThreadSafePtr_t<T> const& dep){
+    // f'(x) = (2/sqrt(pi)) * exp(-x^2)
+    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    return make_IvyThreadSafePtr<T>(def_mem_type, nullptr, tensor_apply_elementwise(*dep, [](auto v){ return TwoOverSqrtPi<decltype(v)>()*std_math::exp(-v*v); }));
+  }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_tensor_v<T>)> __HOST_DEVICE__ typename ErfFastFcnal<T>::value_t ErfFast(T const& x){ return ErfFastFcnal<T>::eval(x); }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && is_tensor_v<T>)> __HOST__ typename ErfFastFcnal<T>::value_t ErfFast(T const& x){ return ErfFastFcnal<T>::eval(x); }
   /**
    * @brief Construct a lazy ErfFast function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -1122,7 +1216,19 @@ namespace IvyMath{
   IVY_MATH_GRAPH_QUALIFIER ErfcFastFcnal<T, complex_domain_tag>::grad_t ErfcFastFcnal<T, complex_domain_tag>::gradient(IvyThreadSafePtr_t<X_t> const& x){
     return -Exp(-x*x)*Scalar<fndtype_t>(x.get_memory_type(), x.gpu_stream(), TwoOverSqrtPi<fndtype_t>());
   }
-  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T>)> __HOST_DEVICE__ typename ErfcFastFcnal<T>::value_t ErfcFast(T const& x){ return ErfcFastFcnal<T>::eval(x); }
+  template<typename T>
+  __HOST__ ErfcFastFcnal<T, tensor_domain_tag>::value_t ErfcFastFcnal<T, tensor_domain_tag>::eval(T const& x){
+    // Real-domain ErfcFast coincides with erfc; the fast path differs only for complex args.
+    return tensor_apply_elementwise(x, [](auto v){ return std_math::erfc(v); });
+  }
+  template<typename T>
+  __HOST__ IvyThreadSafePtr_t<T> ErfcFastFcnal<T, tensor_domain_tag>::gradient(IvyThreadSafePtr_t<T> const& dep){
+    // f'(x) = -(2/sqrt(pi)) * exp(-x^2)
+    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    return make_IvyThreadSafePtr<T>(def_mem_type, nullptr, tensor_apply_elementwise(*dep, [](auto v){ return -TwoOverSqrtPi<decltype(v)>()*std_math::exp(-v*v); }));
+  }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_tensor_v<T>)> __HOST_DEVICE__ typename ErfcFastFcnal<T>::value_t ErfcFast(T const& x){ return ErfcFastFcnal<T>::eval(x); }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && is_tensor_v<T>)> __HOST__ typename ErfcFastFcnal<T>::value_t ErfcFast(T const& x){ return ErfcFastFcnal<T>::eval(x); }
   /**
    * @brief Construct a lazy ErfcFast function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -1162,7 +1268,62 @@ namespace IvyMath{
       Complex<fndtype_t>(x.get_memory_type(), x.gpu_stream(), Zero<fndtype_t>(), TwoOverSqrtPi<fndtype_t>())
       - Scalar<fndtype_t>(x.get_memory_type(), x.gpu_stream(), Two<fndtype_t>())*x*FaddeevaFast(x);
   }
-  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T>)> __HOST_DEVICE__ typename FaddeevaFastFcnal<T>::value_t FaddeevaFast(T const& x){ return FaddeevaFastFcnal<T>::eval(x); }
+  // FADDEEVA-FAST — tensor domain (element-wise, output is a complex-valued tensor)
+  template<typename T>
+  __HOST__ FaddeevaFastFcnal<T, tensor_domain_tag>::value_t FaddeevaFastFcnal<T, tensor_domain_tag>::eval(T const& x){
+    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    using cplx_dtype_t = convert_to_complex_t<dtype_t>;
+    value_t res(x.shape());
+    for (IvyTensorDim_t i = 0; i < x.num_elements(); ++i){
+      if constexpr (is_pointer_v<dtype_t>){
+        using inner_t = typename dtype_t::element_type;
+        auto const rv = unpack_function_input_reduced<inner_t>::get(*x[i]);
+        using num_t = std_ttraits::remove_const_t<decltype(rv)>;
+        auto const cval = IvyCerf::faddeeva_fast(IvyComplex<num_t>(rv, Zero<num_t>()));
+        using cinner_t = typename cplx_dtype_t::element_type;
+        res[i] = make_IvyThreadSafePtr<cinner_t>(def_mem_type, nullptr, cval);
+      } else {
+        auto const rv = unpack_function_input_reduced<dtype_t>::get(x[i]);
+        using num_t = std_ttraits::remove_const_t<decltype(rv)>;
+        auto const cval = IvyCerf::faddeeva_fast(IvyComplex<num_t>(rv, Zero<num_t>()));
+        res[i] = cplx_dtype_t(cval.Re(), cval.Im());
+      }
+    }
+    return res;
+  }
+  template<typename T>
+  __HOST__ IvyThreadSafePtr_t<typename FaddeevaFastFcnal<T, tensor_domain_tag>::grad_value_t> FaddeevaFastFcnal<T, tensor_domain_tag>::gradient(IvyThreadSafePtr_t<T> const& dep){
+    // dw/dz element-wise = (2i/√π) − 2·z·w(z)
+    constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
+    using cplx_dtype_t = convert_to_complex_t<dtype_t>;
+    grad_value_t res((*dep).shape());
+    for (IvyTensorDim_t i = 0; i < (*dep).num_elements(); ++i){
+      if constexpr (is_pointer_v<dtype_t>){
+        using inner_t = typename dtype_t::element_type;
+        auto const rv = unpack_function_input_reduced<inner_t>::get(*(*dep)[i]);
+        using num_t = std_ttraits::remove_const_t<decltype(rv)>;
+        using cval_t = IvyComplex<num_t>;
+        cval_t const z(rv, Zero<num_t>());
+        cval_t const wz = IvyCerf::faddeeva_fast(z);
+        cval_t const two_i_over_sqrtpi(Zero<num_t>(), TwoOverSqrtPi<num_t>());
+        cval_t const grad_i = two_i_over_sqrtpi - cval_t(Two<num_t>(), Zero<num_t>()) * z * wz;
+        using cinner_t = typename cplx_dtype_t::element_type;
+        res[i] = make_IvyThreadSafePtr<cinner_t>(def_mem_type, nullptr, grad_i);
+      } else {
+        auto const rv = unpack_function_input_reduced<dtype_t>::get((*dep)[i]);
+        using num_t = std_ttraits::remove_const_t<decltype(rv)>;
+        using cval_t = IvyComplex<num_t>;
+        cval_t const z(rv, Zero<num_t>());
+        cval_t const wz = IvyCerf::faddeeva_fast(z);
+        cval_t const two_i_over_sqrtpi(Zero<num_t>(), TwoOverSqrtPi<num_t>());
+        cval_t const grad_i = two_i_over_sqrtpi - cval_t(Two<num_t>(), Zero<num_t>()) * z * wz;
+        res[i] = cplx_dtype_t(grad_i.Re(), grad_i.Im());
+      }
+    }
+    return make_IvyThreadSafePtr<grad_value_t>(def_mem_type, nullptr, res);
+  }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_tensor_v<T>)> __HOST_DEVICE__ typename FaddeevaFastFcnal<T>::value_t FaddeevaFast(T const& x){ return FaddeevaFastFcnal<T>::eval(x); }
+  template<typename T, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && is_tensor_v<T>)> __HOST__ typename FaddeevaFastFcnal<T>::value_t FaddeevaFast(T const& x){ return FaddeevaFastFcnal<T>::eval(x); }
   /**
    * @brief Construct a lazy FaddeevaFast function node for autodiff.
    * @note  Host-only: function-graph objects (IvyRegularFunction) use
@@ -1812,7 +1973,9 @@ namespace IvyMath{
         auto const yv = unpack_function_input_reduced<typename y_elem_t::element_type>::get(*y[i]);
         res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, std_math::pow(xv, yv));
       } else if constexpr (!is_pointer_v<x_elem_t> && !is_pointer_v<y_elem_t>){
-        res[i] = std_math::pow(x[i], y[i]);
+        auto const xv = unpack_function_input_reduced<x_elem_t>::get(x[i]);
+        auto const yv = unpack_function_input_reduced<y_elem_t>::get(y[i]);
+        res[i] = std_math::pow(xv, yv);
       }
     }
     return res;
@@ -1837,6 +2000,11 @@ namespace IvyMath{
           gval = std_math::log(xv) * std_math::pow(xv, yv);
         }
         res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, gval);
+      } else if constexpr (!is_pointer_v<x_elem_t> && !is_pointer_v<y_elem_t>){
+        auto const xv = unpack_function_input_reduced<x_elem_t>::get((*x)[i]);
+        auto const yv = unpack_function_input_reduced<y_elem_t>::get((*y)[i]);
+        if (ivar == 0) res[i] = yv * std_math::pow(xv, yv - One<decltype(yv)>());
+        else res[i] = std_math::log(xv) * std_math::pow(xv, yv);
       }
     }
     return make_IvyThreadSafePtr<value_t>(def_mem_type, nullptr, res);
@@ -1851,7 +2019,8 @@ namespace IvyMath{
         auto const xv = unpack_function_input_reduced<inner_t>::get(*x[i]);
         res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, std_math::pow(xv, static_cast<decltype(xv)>(y)));
       } else {
-        res[i] = std_math::pow(x[i], static_cast<dtype_t>(y));
+        auto const xv = unpack_function_input_reduced<dtype_t>::get(x[i]);
+        res[i] = std_math::pow(xv, static_cast<decltype(xv)>(y));
       }
     }
     return res;
@@ -1870,8 +2039,9 @@ namespace IvyMath{
           auto const yv = static_cast<decltype(xv)>(*y);
           res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, yv * std_math::pow(xv, yv - One<decltype(yv)>()));
         } else {
-          auto const yv = static_cast<dtype_t>(*y);
-          res[i] = yv * std_math::pow((*x)[i], yv - One<dtype_t>());
+          auto const xv = unpack_function_input_reduced<dtype_t>::get((*x)[i]);
+          auto const yv = static_cast<decltype(xv)>(*y);
+          res[i] = yv * std_math::pow(xv, yv - One<decltype(yv)>());
         }
       }
     }
@@ -1887,7 +2057,8 @@ namespace IvyMath{
         auto const yv = unpack_function_input_reduced<inner_t>::get(*y[i]);
         res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, std_math::pow(static_cast<decltype(yv)>(x), yv));
       } else {
-        res[i] = std_math::pow(static_cast<dtype_t>(x), y[i]);
+        auto const yv = unpack_function_input_reduced<dtype_t>::get(y[i]);
+        res[i] = std_math::pow(static_cast<decltype(yv)>(x), yv);
       }
     }
     return res;
@@ -1905,8 +2076,9 @@ namespace IvyMath{
           auto const yv = unpack_function_input_reduced<inner_t>::get(*(*y)[i]);
           res[i] = make_IvyThreadSafePtr<inner_t>(def_mem_type, nullptr, std_math::log(xv) * std_math::pow(xv, yv));
         } else {
-          auto const xv = static_cast<dtype_t>(*x);
-          res[i] = std_math::log(xv) * std_math::pow(xv, (*y)[i]);
+          auto const xv = static_cast<fundamental_data_t<dtype_t>>(*x);
+          auto const yv = unpack_function_input_reduced<dtype_t>::get((*y)[i]);
+          res[i] = std_math::log(xv) * std_math::pow(xv, yv);
         }
       }
     }
