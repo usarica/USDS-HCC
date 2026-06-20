@@ -132,11 +132,70 @@ static void test_charts(){
 }
 
 
+static void test_matrix_views(){
+  __PRINT_INFO__("--- quaternion matrix views (2x2 complex, 4x4 real) ---\n");
+  IvyTensorShape probe_shape({ 2, 2 });
+  auto stream = probe_shape.gpu_stream();
+  auto mem = probe_shape.get_memory_type();
+
+  // q = a + b i + c j + d k
+  double const a = 1.0, b = 2.0, c = 3.0, d = 4.0;
+  IvyQuaternion<double> q(a, b, c, d);
+  double const nrm2 = a*a + b*b + c*c + d*d; // |q|^2 = 30
+
+  // 2x2 complex SU(2)-style view: [[a+bi, c+di], [-c+di, a-bi]]
+  auto M2 = to_complex_matrix(mem, stream, q);
+  check(close((*M2)[{0,0}].Re(),a) && close((*M2)[{0,0}].Im(),b), "M2[0,0] = a + b i");
+  check(close((*M2)[{0,1}].Re(),c) && close((*M2)[{0,1}].Im(),d), "M2[0,1] = c + d i");
+  check(close((*M2)[{1,0}].Re(),-c) && close((*M2)[{1,0}].Im(),d), "M2[1,0] = -c + d i");
+  check(close((*M2)[{1,1}].Re(),a) && close((*M2)[{1,1}].Im(),-b), "M2[1,1] = a - b i");
+  // scalar part = (1/2) trace
+  check(close(((*M2)[{0,0}].Re() + (*M2)[{1,1}].Re())/2.0, a), "0.5 * tr(M2) = scalar part");
+  // det(M2) = |q|^2
+  IvyComplex<double> det2 = (*M2)[{0,0}]*(*M2)[{1,1}] - (*M2)[{0,1}]*(*M2)[{1,0}];
+  check(close(det2.Re(), nrm2) && close(det2.Im(), 0.0), "det(M2) = |q|^2");
+  // conjugate quaternion <-> conjugate transpose of M2
+  IvyQuaternion<double> qc = Conjugate(q);
+  auto M2c = to_complex_matrix(mem, stream, qc);
+  bool ct_ok = true;
+  for (int i = 0; i < 2; ++i) for (int j = 0; j < 2; ++j){
+    IvyComplex<double> lhs = (*M2c)[{i,j}];
+    IvyComplex<double> rhs = (*M2)[{j,i}]; // conjugate-transpose: compare to conj of transposed entry
+    ct_ok = ct_ok && close(lhs.Re(),rhs.Re()) && close(lhs.Im(),-rhs.Im());
+  }
+  check(ct_ok, "conjugate(q) <-> conjugate transpose of M2");
+
+  // 4x4 real left-multiplication view.
+  auto M4 = to_real_matrix(mem, stream, q);
+  check(close((*M4)[{0,0}],a) && close((*M4)[{0,1}],-b) && close((*M4)[{0,2}],-c) && close((*M4)[{0,3}],-d), "M4 row 0");
+  check(close((*M4)[{1,0}],b) && close((*M4)[{1,1}],a) && close((*M4)[{1,2}],-d) && close((*M4)[{1,3}],c), "M4 row 1");
+  check(close((*M4)[{2,0}],c) && close((*M4)[{2,1}],d) && close((*M4)[{2,2}],a) && close((*M4)[{2,3}],-b), "M4 row 2");
+  check(close((*M4)[{3,0}],d) && close((*M4)[{3,1}],-c) && close((*M4)[{3,2}],b) && close((*M4)[{3,3}],a), "M4 row 3");
+  // scalar part = (1/4) trace
+  double tr4 = (*M4)[{0,0}] + (*M4)[{1,1}] + (*M4)[{2,2}] + (*M4)[{3,3}];
+  check(close(tr4/4.0, a), "0.25 * tr(M4) = scalar part");
+  // M4(q) * vec(r) = vec(q*r)  (left Hamilton multiplication)
+  IvyQuaternion<double> r(0.5, -1.0, 2.0, -0.5);
+  double rv[4] = { r.W(), r.X(), r.Y(), r.Z() };
+  double out[4] = {0,0,0,0};
+  for (int i = 0; i < 4; ++i) for (int j = 0; j < 4; ++j) out[i] += (*M4)[{i,j}] * rv[j];
+  IvyQuaternion<double> qr = q * r;
+  check(close(out[0],qr.W()) && close(out[1],qr.X()) && close(out[2],qr.Y()) && close(out[3],qr.Z()),
+        "M4(q) * vec(r) = vec(q*r) (left Hamilton product)");
+  // conjugate quaternion <-> transpose of M4
+  auto M4c = to_real_matrix(mem, stream, qc);
+  bool t_ok = true;
+  for (int i = 0; i < 4; ++i) for (int j = 0; j < 4; ++j) t_ok = t_ok && close((*M4c)[{i,j}], (*M4)[{j,i}]);
+  check(t_ok, "conjugate(q) <-> transpose of M4");
+}
+
+
 void utest(){
   __PRINT_INFO__("=== utest_quaternion ===\n");
   test_value_algebra();
   test_autodiff();
   test_charts();
+  test_matrix_views();
   __PRINT_INFO__("=== ALL utest_quaternion tests PASSED ===\n");
 }
 
