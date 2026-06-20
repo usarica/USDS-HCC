@@ -14,6 +14,11 @@
  * Complex-output ops (eager value only — output domain differs from input):
  *   Faddeeva, FaddeevaFast.
  * Binary power on tensors (eager value): Pow(t, scalar) and Pow(t, t).
+ *
+ * (C) Complex-domain coverage: element-wise eval MUST be domain-generic and
+ * route through IvyMath (std_math has no complex overloads). A complex-cell
+ * tensor is evaluated through Sin/Cos/Tan/Cot/Exp/Log/Sqrt/SinH/CosH and the
+ * values are checked against std::complex<double> closed forms.
  */
 
 #include "common_test_defs.h"
@@ -22,6 +27,7 @@
 #include "autodiff/basic_nodes/IvyTensor.h"
 
 #include <cmath>
+#include <complex>
 #include "std_ivy/IvyCassert.h"
 
 
@@ -109,6 +115,43 @@ static void run_suite(char const* tag, Tptr const& t, Seed const& seed, double a
 }
 
 
+// Read a complex-cell tensor element as std::complex<double>, regardless of representation.
+template<typename E> static std::complex<double> cx(E const& e){
+  if constexpr (is_pointer_v<E>) return std::complex<double>((*e).Re(), (*e).Im());
+  else return std::complex<double>(e.Re(), e.Im());
+}
+template<typename Tens, typename Fn> static bool all_cx(Tens const& t, Fn fn, double tol = 1e-9){
+  for (IvyTensorDim_t i = 0; i < t.num_elements(); ++i){
+    auto got = cx(t[i]); auto ref = fn();
+    if (!close(got.real(), ref.real(), tol) || !close(got.imag(), ref.imag(), tol)) return false;
+  }
+  return true;
+}
+
+// Element-wise unary ops MUST be domain-generic: evaluating on a complex tensor
+// argument has to route through IvyMath (not std_math, which has no complex
+// overloads for these). This suite verifies values against std::complex<double>
+// closed forms. (Complex cells are non-differentiable, so values only.)
+template<typename Tptr>
+static void run_complex_suite(char const* tag, Tptr const& t, std::complex<double> z){
+  __PRINT_INFO__("-- %s --\n", tag);
+  auto val_op = [&](auto node, auto val_fn, char const* name){
+    char lbl[128];
+    std::snprintf(lbl, sizeof(lbl), "%s value (complex)", name);
+    check(all_cx(node->value(), val_fn, 1e-9), lbl);
+  };
+  val_op(Sin(t),  [&]{ return std::sin(z);  }, "Sin");
+  val_op(Cos(t),  [&]{ return std::cos(z);  }, "Cos");
+  val_op(Tan(t),  [&]{ return std::tan(z);  }, "Tan");
+  val_op(Cot(t),  [&]{ return std::cos(z)/std::sin(z); }, "Cot");
+  val_op(Exp(t),  [&]{ return std::exp(z);  }, "Exp");
+  val_op(Log(t),  [&]{ return std::log(z);  }, "Log");
+  val_op(Sqrt(t), [&]{ return std::sqrt(z); }, "Sqrt");
+  val_op(SinH(t), [&]{ return std::sinh(z); }, "SinH");
+  val_op(CosH(t), [&]{ return std::cosh(z); }, "CosH");
+}
+
+
 void utest(){
   __PRINT_INFO__("=== utest_tensor_unary_ops ===\n");
 
@@ -131,6 +174,14 @@ void utest(){
     auto t = Tensor<IvyScalarPtr_t<double>>(mem, st, shape, x);
     IvyThreadSafePtr_t<IvyBaseNode> xn(x);
     run_suite("array-of-pointers representation", t, xn, a);
+  }
+
+  // (C) complex contiguous-cell representation: element-wise eval must be
+  //     domain-generic (route through IvyMath, not std_math). Values only.
+  {
+    const double re = 0.7, im = 0.3;
+    auto t = TensorComplex<double>(mem, st, shape, IvyTensorComplexCell<double>(re, im));
+    run_complex_suite("complex contiguous-cell representation", t, std::complex<double>(re, im));
   }
 
   __PRINT_INFO__("=== ALL utest_tensor_unary_ops tests PASSED ===\n");

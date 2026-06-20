@@ -59,6 +59,17 @@ namespace IvyMath{
           auto const gv = unpack_function_input_reduced<inner_t>::get(*(*grad_dep)[i]);
           result[i] = make_IvyThreadSafePtr<inner_t>(mem, nullptr, fv * gv);
         }
+      } else if constexpr (is_complex_v<dtype_t>){
+        // Complex cells are not closed under arithmetic (cell*cell -> IvyComplex):
+        // read operands as IvyComplex, apply the (holomorphic) chain rule, and
+        // write the canonical components back through the cell constructor.
+        using rT = typename dtype_t::dtype_t;
+        for (IvyTensorDim_t i = 0; i < n; ++i){
+          IvyComplex<rT> const fv((*f_prime)[i].Re(), (*f_prime)[i].Im());
+          IvyComplex<rT> const gv((*grad_dep)[i].Re(), (*grad_dep)[i].Im());
+          auto const p = fv * gv;
+          result[i] = dtype_t(p.Re(), p.Im());
+        }
       } else {
         for (IvyTensorDim_t i = 0; i < n; ++i){
           auto const fv = unpack_function_input_reduced<dtype_t>::get((*f_prime)[i]);
