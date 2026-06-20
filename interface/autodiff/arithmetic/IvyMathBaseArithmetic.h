@@ -331,7 +331,9 @@ namespace IvyMath{
   __HOST_DEVICE__ SqrtFcnal<T, real_domain_tag>::value_t SqrtFcnal<T, real_domain_tag>::eval(T const& x){ return value_t(SqrtFcnal<dtype_t>::eval(unpack_function_input_reduced<T>::get(x))); }
   template<typename T> template<typename X_t>
   IVY_MATH_GRAPH_QUALIFIER SqrtFcnal<T, real_domain_tag>::grad_t SqrtFcnal<T, real_domain_tag>::gradient(IvyThreadSafePtr_t<X_t> const& x){
-    return Pow(x, Scalar<fndtype_t>(x.get_memory_type(), x.gpu_stream(), MinusOneHalf<fndtype_t>()));
+    // d/dx sqrt(x) = (1/2) * x^(-1/2)
+    return Scalar<fndtype_t>(x.get_memory_type(), x.gpu_stream(), OneHalf<fndtype_t>())
+      * Pow(x, Scalar<fndtype_t>(x.get_memory_type(), x.gpu_stream(), MinusOneHalf<fndtype_t>()));
   }
   template<typename T>
   __HOST_DEVICE__ SqrtFcnal<T, complex_domain_tag>::value_t SqrtFcnal<T, complex_domain_tag>::eval(T const& x){

@@ -211,7 +211,10 @@ namespace IvyMath{
     using dtype_t = reduced_data_t<unpacked_reduced_value_t<T>>;
     using value_t = IvyScalar<dtype_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyThreadSafePtr_t<IvyFunction<value_t, real_domain_tag>>;
+    // The gradient is built from Pow(x, -1/2), a 2D function node whose precision_type is the
+    // bare reduced data type (dtype_t), not the IvyScalar wrapper. grad_t must therefore name
+    // IvyFunction<dtype_t, ...> to match the type Pow(...) actually returns.
+    using grad_t = IvyThreadSafePtr_t<IvyFunction<dtype_t, real_domain_tag>>;
     static __HOST_DEVICE__ value_t eval(T const& x);
     template<typename X_t>
     static IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
@@ -1615,11 +1618,18 @@ namespace IvyMath{
     template<typename X_t, typename Y_t>
     static __HOST__ IvyThreadSafePtr_t<value_t> gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
   };
+  // NOTE: like IvyAdd/IvySubtract/IvyMultiply/IvyDivide, IvyPow relies on the default
+  // precision_type/Domain of IvyRegularFunction_2D, i.e. Domain = get_domain_t<more_precise_t<T,U>>.
+  // The earlier explicit override Domain = get_domain_t<PowFcnal::value_t> derived the domain from
+  // the *reduced* value type, which for real⊗real collapses to a bare arithmetic type
+  // (e.g. double -> arithmetic_domain_tag). That mis-tagged the Pow node and, because PowFcnal's
+  // gradient recursively builds Pow(x, y-1) nodes, produced real⊗arithmetic sub-nodes whose
+  // (gradient-less) evaluator is force-instantiated via the vtable -> the real-domain scalar
+  // Pow/Sqrt graph node failed to compile. The default derivation keeps the algebra domain
+  // (real stays real, complex stays complex) while still up-casting mixed operands.
   template<typename T, typename U> using IvyPow = IvyRegularFunction_2D<
     T, U,
-    PowFcnal<unpack_if_function_t<T>, unpack_if_function_t<U>>,
-    unpacked_reduced_value_t<typename PowFcnal<unpack_if_function_t<T>, unpack_if_function_t<U>>::value_t>,
-    get_domain_t<typename PowFcnal<unpack_if_function_t<T>, unpack_if_function_t<U>>::value_t>
+    PowFcnal<unpack_if_function_t<T>, unpack_if_function_t<U>>
   >;
   template<typename T, typename U, ENABLE_IF_BOOL(!is_pointer_v<T> && !is_pointer_v<U> && !is_tensor_v<T> && !is_tensor_v<U>)>
   __INLINE_FCN_FORCE__ __HOST_DEVICE__ typename PowFcnal<T, U>::value_t Pow(T const& x, U const& y);
