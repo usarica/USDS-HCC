@@ -13,6 +13,7 @@
 #include "std_ivy/IvyUnorderedMap.h"
 #include "autodiff/basic_nodes/IvyScalar.h"
 #include "autodiff/basic_nodes/IvyComplex.h"
+#include "autodiff/basic_nodes/IvyQuaternion.h"
 #include "autodiff/basic_nodes/IvyTensor.h"
 #include "autodiff/arithmetic/IvyMathBaseArithmetic.h"
 #include "stream/IvyStream.h"

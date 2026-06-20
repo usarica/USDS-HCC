@@ -63,7 +63,10 @@ namespace IvyMath{
       if (var && __STATIC_CAST__(IvyBaseNode const*, this) == var.get())
         return make_unit_function<precision_type, Domain>();
       auto grad_dep = function_gradient<T>::get(*dep, var);
-      return evaluator_t::gradient(dep)*grad_dep;
+      if constexpr (evaluator_is_order_aware_v<evaluator_t>)
+        return evaluator_t::combine_gradient(dep, grad_dep);
+      else
+        return evaluator_t::gradient(dep)*grad_dep;
     }
   }
 
@@ -122,7 +125,10 @@ namespace IvyMath{
     }
     auto grad_x = function_gradient<T>::get(*x, var);
     auto grad_y = function_gradient<U>::get(*y, var);
-    return evaluator_t::gradient(0, x, y)*grad_x + evaluator_t::gradient(1, x, y)*grad_y;
+    if constexpr (evaluator_is_order_aware_v<evaluator_t>)
+      return evaluator_t::combine_gradient(x, y, grad_x, grad_y);
+    else
+      return evaluator_t::gradient(0, x, y)*grad_x + evaluator_t::gradient(1, x, y)*grad_y;
   }
 
   // Special 2D case with no gradients

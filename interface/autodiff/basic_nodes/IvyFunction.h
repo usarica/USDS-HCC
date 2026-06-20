@@ -5,6 +5,7 @@
 #include "autodiff/base_types/IvyBaseModifiable.h"
 #include "autodiff/basic_nodes/IvyScalar.h"
 #include "autodiff/basic_nodes/IvyComplex.h"
+#include "autodiff/basic_nodes/IvyQuaternion.h"
 #include "autodiff/basic_nodes/IvyTensor.h"
 #include "autodiff/IvyBaseMathTypes.h"
 #include "autodiff/arithmetic/IvyMathConstOps.h"
@@ -25,8 +26,11 @@ namespace IvyMath{
     using type = std_ttraits::conditional_t<
       is_tensor_v<Domain>,
       IvyTensor<dtype_t>, std_ttraits::conditional_t<
-        is_complex_v<Domain>,
-        IvyComplex<dtype_t>, IvyScalar<dtype_t>
+        is_quaternion_v<Domain>,
+        IvyQuaternion<dtype_t>, std_ttraits::conditional_t<
+          is_complex_v<Domain>,
+          IvyComplex<dtype_t>, IvyScalar<dtype_t>
+        >
       >
     >;
   };

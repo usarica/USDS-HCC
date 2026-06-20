@@ -42,6 +42,25 @@ namespace IvyMath{
   template<typename Evaluator, typename Default>
   using evaluator_gradient_domain_t = typename evaluator_gradient_domain<Evaluator, Default>::type;
 
+  /**
+   * @brief Detect whether an Evaluator provides an order-aware gradient combiner.
+   *
+   * Commutative algebras (R, C and the existing tensor/real/complex evaluators)
+   * combine the chain rule as @c local0*grad_x + local1*grad_y, where the local
+   * partial and the upstream gradient commute. Non-commutative division algebras
+   * (e.g. the Hamilton quaternions H) cannot: the differential of @c x*y is
+   * @c dx*y + x*dy with the factors on fixed sides. Such evaluators opt in by
+   * declaring the marker typedef @c order_aware_tag and providing a static
+   * @c combine_gradient(...) that returns the full, order-correct contribution.
+   * The commutative path is left byte-identical (the trait is @c false there).
+   */
+  template<typename Evaluator, typename = void>
+  struct evaluator_is_order_aware : std_ttraits::false_type{};
+  template<typename Evaluator>
+  struct evaluator_is_order_aware<Evaluator, std_ttraits::void_t<typename Evaluator::order_aware_tag>> : std_ttraits::true_type{};
+  template<typename Evaluator>
+  inline constexpr bool evaluator_is_order_aware_v = evaluator_is_order_aware<Evaluator>::value;
+
   /*
   IvyRegularFunction_1D:
   This is a master class for regular 1D functions.

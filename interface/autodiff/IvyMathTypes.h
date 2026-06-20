@@ -14,21 +14,26 @@ namespace IvyMath{
     static constexpr bool is_arithmetic_T = is_arithmetic_v<ctype_T>;
     static constexpr bool is_var_T = is_real_v<ctype_T>;
     static constexpr bool is_complex_T = is_complex_v<ctype_T>;
+    static constexpr bool is_quaternion_T = is_quaternion_v<ctype_T>;
     static constexpr bool is_tensor_T = is_tensor_v<ctype_T>;
 
     static constexpr bool is_arithmetic_U = is_arithmetic_v<ctype_U>;
     static constexpr bool is_var_U = is_real_v<ctype_U>;
     static constexpr bool is_complex_U = is_complex_v<ctype_U>;
+    static constexpr bool is_quaternion_U = is_quaternion_v<ctype_U>;
     static constexpr bool is_tensor_U = is_tensor_v<ctype_U>;
 
+    // Precedence (highest first): tensor > quaternion > complex > real(scalar) > arithmetic.
     static constexpr bool swap_T_U = (
       is_tensor_U
       ||
-      (!is_tensor_T && is_complex_U)
+      (!is_tensor_T && is_quaternion_U)
       ||
-      (!is_tensor_T && !is_complex_T && is_var_U)
+      (!is_tensor_T && !is_quaternion_T && is_complex_U)
       ||
-      (!is_tensor_T && !is_complex_T && !is_var_T && is_arithmetic_U)
+      (!is_tensor_T && !is_quaternion_T && !is_complex_T && is_var_U)
+      ||
+      (!is_tensor_T && !is_quaternion_T && !is_complex_T && !is_var_T && is_arithmetic_U)
       );
 
     using left_type = std_ttraits::conditional_t<swap_T_U, ctype_U, ctype_T>;
@@ -37,18 +42,23 @@ namespace IvyMath{
     static constexpr bool is_arithmetic_left = (swap_T_U ? is_arithmetic_U : is_arithmetic_T);
     static constexpr bool is_var_left = (swap_T_U ? is_var_U : is_var_T);
     static constexpr bool is_complex_left = (swap_T_U ? is_complex_U : is_complex_T);
+    static constexpr bool is_quaternion_left = (swap_T_U ? is_quaternion_U : is_quaternion_T);
     static constexpr bool is_tensor_left = (swap_T_U ? is_tensor_U : is_tensor_T);
 
     using type = std_ttraits::conditional_t<
       is_tensor_left,
       IvyTensor<fund_type>,
       std_ttraits::conditional_t<
-        is_complex_left,
-        IvyComplex<fund_type>,
+        is_quaternion_left,
+        IvyQuaternion<fund_type>,
         std_ttraits::conditional_t<
-          is_var_left,
-          IvyScalar<fund_type>,
-          fund_type
+          is_complex_left,
+          IvyComplex<fund_type>,
+          std_ttraits::conditional_t<
+            is_var_left,
+            IvyScalar<fund_type>,
+            fund_type
+          >
         >
       >
     >;

@@ -4,6 +4,7 @@
 
 #include "autodiff/basic_nodes/IvyScalar.h"
 #include "autodiff/basic_nodes/IvyComplex.h"
+#include "autodiff/basic_nodes/IvyQuaternion.h"
 #include "autodiff/arithmetic/IvyMathConstOps.h"
 #include "autodiff/arithmetic/IvyMathFunctionPrimitives.h"
 #include "config/IvyAnnotationDispatchPolicy.h"
@@ -99,6 +100,16 @@ namespace IvyMath{
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
   };
+  /** @brief Quaternion negation. Linear (order-independent): d(-q) = -dq. */
+  template<typename T> struct NegateFcnal<T, quaternion_domain_tag>{
+    using value_t = unpacked_reduced_value_t<T>;
+    using dtype_t = reduced_data_t<value_t>;
+    using fndtype_t = fundamental_data_t<value_t>;
+    using grad_t = IvyQuaternionPtr_t<fndtype_t>;
+    static __HOST_DEVICE__ value_t eval(T const& x);
+    template<typename X_t>
+    static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
+  };
   /** @brief Element-wise negation for tensor-domain inputs. */
   template<typename T> struct NegateFcnal<T, tensor_domain_tag>{
     using dtype_t = typename T::dtype_t;
@@ -151,6 +162,23 @@ namespace IvyMath{
     static __HOST_DEVICE__ value_t eval(T const& x);
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
+  };
+  /**
+   * @brief Quaternion multiplicative inverse, q^{-1} = conj(q)/|q|^2.
+   *
+   * NON-commutative and hence order-aware: the differential of the inverse is
+   * d(q^{-1}) = -q^{-1} (dq) q^{-1}, a two-sided action that cannot be expressed
+   * as a single left/right factor. It opts into the order-aware combiner.
+   */
+  template<typename T> struct MultInverseFcnal<T, quaternion_domain_tag>{
+    using value_t = unpacked_reduced_value_t<T>;
+    using dtype_t = reduced_data_t<value_t>;
+    using fndtype_t = fundamental_data_t<value_t>;
+    using grad_t = IvyThreadSafePtr_t<IvyFunction<value_t, quaternion_domain_tag>>;
+    using order_aware_tag = void;
+    static __HOST_DEVICE__ value_t eval(T const& x);
+    template<typename X_t, typename G_t>
+    static __HOST__ grad_t combine_gradient(IvyThreadSafePtr_t<X_t> const& dep, G_t const& grad_dep);
   };
   /** @brief Element-wise multiplicative inverse (1/x) for tensor inputs. */
   template<typename T> struct MultInverseFcnal<T, tensor_domain_tag>{
@@ -230,6 +258,11 @@ namespace IvyMath{
     static __HOST_DEVICE__ value_t eval(T const& x);
   };
   template<typename T> struct AbsFcnal<T, complex_domain_tag>{
+    using value_t = convert_to_real_t<T>;
+    using dtype_t = reduced_data_t<value_t>;
+    static __HOST_DEVICE__ value_t eval(T const& x);
+  };
+  template<typename T> struct AbsFcnal<T, quaternion_domain_tag>{
     using value_t = convert_to_real_t<T>;
     using dtype_t = reduced_data_t<value_t>;
     static __HOST_DEVICE__ value_t eval(T const& x);
@@ -938,6 +971,16 @@ namespace IvyMath{
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
   };
+  /** @brief Quaternion addition. Linear: d(x+y) = dx + dy (order-independent). */
+  template<typename T, typename U> struct AddFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>{
+    using value_t = more_precise_reduced_t<T, U>;
+    using dtype_t = reduced_data_t<value_t>;
+    using fndtype_t = fundamental_data_t<value_t>;
+    using grad_t = IvyQuaternionPtr_t<fndtype_t>;
+    static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
+    template<typename X_t, typename Y_t>
+    static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
+  };
   template<typename T, typename U> struct AddFcnal<T, U, arithmetic_domain_tag, real_domain_tag>{
     using value_t = more_precise_reduced_t<T, U>;
     using dtype_t = reduced_data_t<value_t>;
@@ -1017,6 +1060,16 @@ namespace IvyMath{
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
     using grad_t = IvyComplexPtr_t<fndtype_t>;
+    static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
+    template<typename X_t, typename Y_t>
+    static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
+  };
+  /** @brief Quaternion subtraction. Linear: d(x-y) = dx - dy (order-independent). */
+  template<typename T, typename U> struct SubtractFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>{
+    using value_t = more_precise_reduced_t<T, U>;
+    using dtype_t = reduced_data_t<value_t>;
+    using fndtype_t = fundamental_data_t<value_t>;
+    using grad_t = IvyQuaternionPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
@@ -1157,6 +1210,23 @@ namespace IvyMath{
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
   };
   /**
+   * @brief Quaternion (Hamilton) product. NON-commutative and order-aware.
+   *
+   * The differential is d(x*y) = dx*y + x*dy, so the upstream gradient of x is
+   * right-multiplied by y and that of y is left-multiplied by x. It opts into
+   * the order-aware combiner instead of the commutative local-partial form.
+   */
+  template<typename T, typename U> struct MultiplyFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>{
+    using value_t = more_precise_reduced_t<T, U>;
+    using dtype_t = reduced_data_t<value_t>;
+    using fndtype_t = fundamental_data_t<value_t>;
+    using grad_t = IvyFunctionPtr_t<value_t, quaternion_domain_tag>;
+    using order_aware_tag = void;
+    static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
+    template<typename X_t, typename Y_t, typename GX_t, typename GY_t>
+    static __HOST__ grad_t combine_gradient(IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y, GX_t const& grad_x, GY_t const& grad_y);
+  };
+  /**
    * @brief Element-wise multiplication for two tensor-domain inputs.
    *
    * Computes the Hadamard (element-wise) product.  Each output element is the
@@ -1214,6 +1284,23 @@ namespace IvyMath{
     static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
+  };
+  /**
+   * @brief Quaternion right-division, x / y = x * y^{-1}. NON-commutative and order-aware.
+   *
+   * Per the agreed convention, @c operator/ is RIGHT division (multiply by the
+   * inverse on the right). The differential follows from x*y^{-1}:
+   *   d(x/y) = dx*y^{-1} - x*y^{-1}*dy*y^{-1}.
+   */
+  template<typename T, typename U> struct DivideFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>{
+    using value_t = more_precise_reduced_t<T, U>;
+    using dtype_t = reduced_data_t<value_t>;
+    using fndtype_t = fundamental_data_t<value_t>;
+    using grad_t = IvyFunctionPtr_t<value_t, quaternion_domain_tag>;
+    using order_aware_tag = void;
+    static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
+    template<typename X_t, typename Y_t, typename GX_t, typename GY_t>
+    static __HOST__ grad_t combine_gradient(IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y, GX_t const& grad_x, GY_t const& grad_y);
   };
   template<typename T, typename U> struct DivideFcnal<T, U, arithmetic_domain_tag, real_domain_tag>{
     using value_t = more_precise_reduced_t<T, U>;

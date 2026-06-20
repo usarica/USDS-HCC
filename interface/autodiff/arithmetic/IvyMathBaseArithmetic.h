@@ -79,6 +79,15 @@ namespace IvyMath{
     return make_IvyThreadSafePtr<typename grad_t::element_type>(x.get_memory_type(), x.gpu_stream(), MinusOne<fndtype_t>());
   }
   template<typename T>
+  __HOST_DEVICE__ NegateFcnal<T, quaternion_domain_tag>::value_t NegateFcnal<T, quaternion_domain_tag>::eval(T const& x){
+    auto const& xx = unpack_function_input_reduced<T>::get(x);
+    return value_t(-xx.W(), -xx.X(), -xx.Y(), -xx.Z());
+  }
+  template<typename T> template<typename X_t>
+  IVY_MATH_GRAPH_QUALIFIER NegateFcnal<T, quaternion_domain_tag>::grad_t NegateFcnal<T, quaternion_domain_tag>::gradient(IvyThreadSafePtr_t<X_t> const& x){
+    return make_IvyThreadSafePtr<typename grad_t::element_type>(x.get_memory_type(), x.gpu_stream(), MinusOne<fndtype_t>());
+  }
+  template<typename T>
   __HOST__ NegateFcnal<T, tensor_domain_tag>::value_t NegateFcnal<T, tensor_domain_tag>::eval(T const& x){
     constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
     value_t res(x);
@@ -156,6 +165,20 @@ namespace IvyMath{
   template<typename T> template<typename X_t>
   IVY_MATH_GRAPH_QUALIFIER MultInverseFcnal<T, complex_domain_tag>::grad_t MultInverseFcnal<T, complex_domain_tag>::gradient(IvyThreadSafePtr_t<X_t> const& x){
     return -MultInverse(x*x);
+  }
+  template<typename T>
+  __HOST_DEVICE__ MultInverseFcnal<T, quaternion_domain_tag>::value_t MultInverseFcnal<T, quaternion_domain_tag>::eval(T const& x){
+    auto const& q = unpack_function_input_reduced<T>::get(x);
+    fndtype_t const n2 = q.norm2();
+    fndtype_t const inv = One<fndtype_t>()/n2;
+    // q^{-1} = conj(q)/|q|^2
+    return value_t(q.W()*inv, -q.X()*inv, -q.Y()*inv, -q.Z()*inv);
+  }
+  template<typename T> template<typename X_t, typename G_t>
+  __HOST__ MultInverseFcnal<T, quaternion_domain_tag>::grad_t MultInverseFcnal<T, quaternion_domain_tag>::combine_gradient(IvyThreadSafePtr_t<X_t> const& dep, G_t const& grad_dep){
+    // d(q^{-1}) = -q^{-1} (dq) q^{-1}  (two-sided, non-commutative).
+    auto binv = MultInverse(dep);
+    return Negate(binv * grad_dep * binv);
   }
   template<typename T>
   __HOST__ MultInverseFcnal<T, tensor_domain_tag>::value_t MultInverseFcnal<T, tensor_domain_tag>::eval(T const& x){
@@ -286,6 +309,10 @@ namespace IvyMath{
   }
   template<typename T>
   __HOST_DEVICE__ AbsFcnal<T, complex_domain_tag>::value_t AbsFcnal<T, complex_domain_tag>::eval(T const& x){
+    return value_t(unpack_function_input_reduced<T>::get(x).norm());
+  }
+  template<typename T>
+  __HOST_DEVICE__ AbsFcnal<T, quaternion_domain_tag>::value_t AbsFcnal<T, quaternion_domain_tag>::eval(T const& x){
     return value_t(unpack_function_input_reduced<T>::get(x).norm());
   }
   template<typename T>
@@ -1165,6 +1192,18 @@ namespace IvyMath{
     );
   }
   template<typename T, typename U>
+  __HOST_DEVICE__ AddFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::value_t AddFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::eval(T const& x, U const& y){
+    auto const& a = unpack_function_input_reduced<T>::get(x);
+    auto const& b = unpack_function_input_reduced<U>::get(y);
+    return value_t(a.W()+b.W(), a.X()+b.X(), a.Y()+b.Y(), a.Z()+b.Z());
+  }
+  template<typename T, typename U> template<typename X_t, typename Y_t>
+  IVY_MATH_GRAPH_QUALIFIER AddFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::grad_t AddFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y){
+    auto mem_type = (ivar==0 ? x.get_memory_type() : y.get_memory_type());
+    auto gpu_stream = (ivar==0 ? x.gpu_stream() : y.gpu_stream());
+    return make_IvyThreadSafePtr<typename grad_t::element_type>(mem_type, gpu_stream, One<fndtype_t>());
+  }
+  template<typename T, typename U>
   __HOST_DEVICE__ AddFcnal<T, U, arithmetic_domain_tag, real_domain_tag>::value_t AddFcnal<T, U, arithmetic_domain_tag, real_domain_tag>::eval(T const& x, U const& y){
     return value_t(x+unpack_function_input_reduced<U>::get(y));
   }
@@ -1263,6 +1302,18 @@ namespace IvyMath{
       mem_type, gpu_stream,
       (ivar==0 ? One<fndtype_t>() : MinusOne<fndtype_t>())
     );
+  }
+  template<typename T, typename U>
+  __HOST_DEVICE__ SubtractFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::value_t SubtractFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::eval(T const& x, U const& y){
+    auto const& a = unpack_function_input_reduced<T>::get(x);
+    auto const& b = unpack_function_input_reduced<U>::get(y);
+    return value_t(a.W()-b.W(), a.X()-b.X(), a.Y()-b.Y(), a.Z()-b.Z());
+  }
+  template<typename T, typename U> template<typename X_t, typename Y_t>
+  IVY_MATH_GRAPH_QUALIFIER SubtractFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::grad_t SubtractFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y){
+    auto mem_type = (ivar==0 ? x.get_memory_type() : y.get_memory_type());
+    auto gpu_stream = (ivar==0 ? x.gpu_stream() : y.gpu_stream());
+    return make_IvyThreadSafePtr<typename grad_t::element_type>(mem_type, gpu_stream, (ivar==0 ? One<fndtype_t>() : MinusOne<fndtype_t>()));
   }
   template<typename T, typename U>
   __HOST_DEVICE__ SubtractFcnal<T, U, arithmetic_domain_tag, real_domain_tag>::value_t SubtractFcnal<T, U, arithmetic_domain_tag, real_domain_tag>::eval(T const& x, U const& y){
@@ -1425,6 +1476,28 @@ namespace IvyMath{
     }
   }
   template<typename T, typename U>
+  __HOST_DEVICE__ MultiplyFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::value_t MultiplyFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::eval(T const& x, U const& y){
+    auto const& a = unpack_function_input_reduced<T>::get(x);
+    auto const& b = unpack_function_input_reduced<U>::get(y);
+    // Hamilton product (non-commutative): i*j = k, j*i = -k.
+    fndtype_t const a0 = a.W(), a1 = a.X(), a2 = a.Y(), a3 = a.Z();
+    fndtype_t const b0 = b.W(), b1 = b.X(), b2 = b.Y(), b3 = b.Z();
+    return value_t(
+      a0*b0 - a1*b1 - a2*b2 - a3*b3,
+      a0*b1 + a1*b0 + a2*b3 - a3*b2,
+      a0*b2 - a1*b3 + a2*b0 + a3*b1,
+      a0*b3 + a1*b2 - a2*b1 + a3*b0
+    );
+  }
+  template<typename T, typename U> template<typename X_t, typename Y_t, typename GX_t, typename GY_t>
+  __HOST__ MultiplyFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::grad_t MultiplyFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::combine_gradient(
+    IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y, GX_t const& grad_x, GY_t const& grad_y
+  ){
+    // d(x*y) = (dx)*y + x*(dy): grad_x acts from the left (right-multiplied by y),
+    // grad_y acts from the right (left-multiplied by x).
+    return grad_x * y + x * grad_y;
+  }
+  template<typename T, typename U>
   __HOST__ MultiplyFcnal<T, U, tensor_domain_tag, tensor_domain_tag>::value_t MultiplyFcnal<T, U, tensor_domain_tag, tensor_domain_tag>::eval(T const& x, U const& y){
     constexpr std_ivy::IvyMemoryType def_mem_type = IvyMemoryHelpers::get_execution_default_memory();
     value_t res(x);
@@ -1504,6 +1577,19 @@ namespace IvyMath{
     default:
       return -x/(y*y);
     }
+  }
+  template<typename T, typename U>
+  __HOST_DEVICE__ DivideFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::value_t DivideFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::eval(T const& x, U const& y){
+    // Right division: x / y = x * y^{-1}.
+    return unpack_function_input_reduced<T>::get(x)*MultInverse(unpack_function_input_reduced<U>::get(y));
+  }
+  template<typename T, typename U> template<typename X_t, typename Y_t, typename GX_t, typename GY_t>
+  __HOST__ DivideFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::grad_t DivideFcnal<T, U, quaternion_domain_tag, quaternion_domain_tag>::combine_gradient(
+    IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y, GX_t const& grad_x, GY_t const& grad_y
+  ){
+    // d(x*y^{-1}) = (dx)*y^{-1} - x*y^{-1}*(dy)*y^{-1}.
+    auto binv = MultInverse(y);
+    return grad_x * binv - x * binv * grad_y * binv;
   }
   template<typename T, typename U>
   __HOST_DEVICE__ DivideFcnal<T, U, arithmetic_domain_tag, real_domain_tag>::value_t DivideFcnal<T, U, arithmetic_domain_tag, real_domain_tag>::eval(T const& x, U const& y){

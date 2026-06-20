@@ -7,11 +7,13 @@
 
 
 namespace IvyMath{
-  // Domains
+  // Domains — the normed division-algebra tower (Cayley–Dickson; Hurwitz: only
+  // R, C, H, O) plus the tensor container domain.
   struct undefined_domain_tag{};
   struct arithmetic_domain_tag{};
-  struct real_domain_tag{};
-  struct complex_domain_tag{};
+  struct real_domain_tag{};        // R  (dim 1, commutative, associative)
+  struct complex_domain_tag{};     // C  (dim 2, commutative, associative)
+  struct quaternion_domain_tag{};  // H  (dim 4, NON-commutative, associative)
   struct tensor_domain_tag{};
   // Domain getter
   template<typename T> struct get_domain{
@@ -20,10 +22,13 @@ namespace IvyMath{
       real_domain_tag, std_ttraits::conditional_t<
         std_ttraits::is_base_of_v<complex_domain_tag, T>,
         complex_domain_tag, std_ttraits::conditional_t<
-          std_ttraits::is_base_of_v<tensor_domain_tag, T>,
-          tensor_domain_tag, std_ttraits::conditional_t<
-            std_ttraits::is_arithmetic_v<T>,
-            arithmetic_domain_tag, undefined_domain_tag
+          std_ttraits::is_base_of_v<quaternion_domain_tag, T>,
+          quaternion_domain_tag, std_ttraits::conditional_t<
+            std_ttraits::is_base_of_v<tensor_domain_tag, T>,
+            tensor_domain_tag, std_ttraits::conditional_t<
+              std_ttraits::is_arithmetic_v<T>,
+              arithmetic_domain_tag, undefined_domain_tag
+            >
           >
         >
       >
@@ -36,13 +41,30 @@ namespace IvyMath{
   template<typename T> inline constexpr bool is_arithmetic_v = std_ttraits::is_arithmetic_v<T>;
   template<typename T> inline constexpr bool is_real_v = std_ttraits::is_same_v<real_domain_tag, get_domain_t<T>>;
   template<typename T> inline constexpr bool is_complex_v = std_ttraits::is_same_v<complex_domain_tag, get_domain_t<T>>;
+  template<typename T> inline constexpr bool is_quaternion_v = std_ttraits::is_same_v<quaternion_domain_tag, get_domain_t<T>>;
   template<typename T> inline constexpr bool is_tensor_v = std_ttraits::is_same_v<tensor_domain_tag, get_domain_t<T>>;
 
+  // Division-algebra structural traits, keyed by domain tag. These gate the
+  // order-aware arithmetic: a commutative algebra keeps the zero-cost path where
+  // left/right multiplicative actions coincide. Octonions (non-associative) will
+  // set is_associative_for_domain=false when added.
+  template<typename DomainTag> struct division_algebra_traits{
+    static constexpr bool is_commutative = true;
+    static constexpr bool is_associative = true;
+  };
+  template<> struct division_algebra_traits<quaternion_domain_tag>{
+    static constexpr bool is_commutative = false;
+    static constexpr bool is_associative = true;
+  };
+  template<typename T> inline constexpr bool is_commutative_v = division_algebra_traits<get_domain_t<T>>::is_commutative;
+  template<typename T> inline constexpr bool is_associative_v = division_algebra_traits<get_domain_t<T>>::is_associative;
+
   // True when T (after unwrapping pointers/IvyThreadSafePtr) carries an Ivy math domain
-  // (real, complex, or tensor) — i.e. it is an Ivy node type, not a bare arithmetic value or an
-  // unrelated foreign type. Used to constrain the global operators so they do not get selected
-  // for foreign types (e.g. std::chrono), which previously caused hard errors via ADL.
-  template<typename T> inline constexpr bool is_ivy_domain_v = is_real_v<T> || is_complex_v<T> || is_tensor_v<T>;
+  // (real, complex, quaternion, or tensor) — i.e. it is an Ivy node type, not a bare
+  // arithmetic value or an unrelated foreign type. Used to constrain the global operators
+  // so they do not get selected for foreign types (e.g. std::chrono), which previously
+  // caused hard errors via ADL.
+  template<typename T> inline constexpr bool is_ivy_domain_v = is_real_v<T> || is_complex_v<T> || is_quaternion_v<T> || is_tensor_v<T>;
 
   // Operability properties
   // The constant/variable distinction was dropped: differentiation is fully
