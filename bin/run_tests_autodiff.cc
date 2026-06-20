@@ -189,15 +189,16 @@ int main(){
   auto grad_fcn_pow_cubed = fcn_pow_cubed->gradient(cplx);
   __PRINT_INFO__("grad_fcn_pow_cubed(%s) = ", typeid(grad_fcn_pow_cubed).name());
   print_value(grad_fcn_pow_cubed->value());
-  bool found_cli = std_algo::find(
-    cplx->get_clients().begin(), cplx->get_clients().end(),
-    fcn_pow_cubed
-  ) != cplx->get_clients().end();
+  // Client back-references are now weak (IvyWeakPtr); a weak client matches a shared owner
+  // when they share the same control block. Search the client list by control-block identity.
+  auto cplx_clients_contain = [&cplx](auto const& sp) -> bool{
+    auto const& clients = cplx->get_clients();
+    for (auto const& w : clients){ if (w.control_block() == sp.control_block()) return true; }
+    return false;
+  };
+  bool found_cli = cplx_clients_contain(fcn_pow_cubed);
   __PRINT_INFO__("Found fcn_pow_cubed in cplx clients: %s ?= true\n", (found_cli ? "true" : "false"));
-  found_cli = std_algo::find(
-    cplx->get_clients().begin(), cplx->get_clients().end(),
-    grad_fcn_pow_cubed
-  ) != cplx->get_clients().end();
+  found_cli = cplx_clients_contain(grad_fcn_pow_cubed);
   __PRINT_INFO__("Found grad_fcn_pow_cubed in cplx clients: %s ?= false\n", (found_cli ? "true" : "false"));
 
   auto pow_cplx_cplx = Pow(cplx, cplx);
