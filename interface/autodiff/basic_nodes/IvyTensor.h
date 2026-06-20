@@ -16,6 +16,7 @@
 #include "autodiff/base_types/IvyBaseModifiable.h"
 #include "autodiff/base_types/IvyClientManager.h"
 #include "autodiff/basic_nodes/IvyTensorShape.h"
+#include "autodiff/basic_nodes/IvyTensorVariableCell.h"
 #include "IvyPrintout.h"
 
 
@@ -237,7 +238,7 @@ namespace IvyMath{
     static __HOST_DEVICE__ constexpr bool is_differentiable(IvyTensor<T> const& x){
       if constexpr (is_constant_v<IvyTensor<T>>) return false;
       bool res = false;
-      for (IvyTensorDim_t i=0; i<x.num_elements(); ++i){ res |= is_differentiable(x.data_[i]); if (res) break; }
+      for (IvyTensorDim_t i=0; i<x.num_elements(); ++i){ res |= IvyMath::is_differentiable(x.data_[i]); if (res) break; }
       return res;
     }
     static __HOST_DEVICE__ void conjugate(IvyTensor<T>& x){
@@ -307,12 +308,37 @@ namespace IvyMath{
   struct tensor_data_client_updator<T, true>{
     static __INLINE_FCN_RELAXED__ __HOST_DEVICE__ void update(IvyTensorPtr_t<T>& tensor){}
   };
+  /**
+   * @brief No-op client registration for contiguous variable-cell tensors.
+   *
+   * @c IvyTensorVariableCell elements carry no @c IvyClientManager, and the
+   * owning tensor node already tracks graph dependents, so there is nothing to
+   * register per element. This keeps a variable tensor leaf at one contiguous
+   * buffer with zero per-element heap allocations.
+   */
+  template<typename T>
+  struct tensor_data_client_updator<IvyTensorVariableCell<T>, false>{
+    static __INLINE_FCN_RELAXED__ __HOST_DEVICE__ void update(IvyTensorPtr_t<IvyTensorVariableCell<T>>& /*tensor*/){}
+  };
 
 
   template<typename T, typename... Args> __HOST_DEVICE__ IvyTensorPtr_t<T> Tensor(Args&&... args){
     auto res = make_IvyThreadSafePtr< IvyTensor<T> >(args...);
     tensor_data_client_updator<T>::update(res);
     return res;
+  }
+
+  /**
+   * @brief Factory for a contiguous differentiable tensor *variable* leaf.
+   *
+   * Produces an @c IvyTensor<IvyTensorVariableCell<T>>: a single contiguous
+   * @c T value buffer that is a first-class differentiation target. Use it as
+   * the leaf of a function-of-tensor graph; @c f->gradient(t) then returns the
+   * element-wise (diagonal) derivative tensor via the existing IvyMath ops.
+   */
+  template<typename T> using IvyVariableTensorPtr_t = IvyTensorPtr_t< IvyTensorVariableCell<T> >;
+  template<typename T, typename... Args> __HOST__ IvyVariableTensorPtr_t<T> TensorVariable(Args&&... args){
+    return Tensor< IvyTensorVariableCell<T> >(std_util::forward<Args>(args)...);
   }
 }
 namespace std_ivy{

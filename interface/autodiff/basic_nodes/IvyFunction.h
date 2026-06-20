@@ -224,12 +224,17 @@ namespace IvyMath{
       IvyThreadSafePtr_t<IvyBaseNode> const& /*var*/
     ) const override{
       using dtype_t = typename T::dtype_t;
-      using inner_t = typename dtype_t::element_type;
       constexpr std_ivy::IvyMemoryType mem = IvyMemoryHelpers::get_execution_default_memory();
       T zero_val(*(this->output));
       IvyTensorDim_t const n = zero_val.num_elements();
-      for (IvyTensorDim_t i = 0; i < n; ++i)
-        zero_val[i] = make_IvyThreadSafePtr<inner_t>(mem, nullptr, typename inner_t::value_t(0));
+      if constexpr (is_pointer_v<dtype_t>){
+        using inner_t = typename dtype_t::element_type;
+        for (IvyTensorDim_t i = 0; i < n; ++i)
+          zero_val[i] = make_IvyThreadSafePtr<inner_t>(mem, nullptr, typename inner_t::value_t(0));
+      } else {
+        for (IvyTensorDim_t i = 0; i < n; ++i)
+          zero_val[i] = dtype_t(0);
+      }
       return make_IvyThreadSafePtr<IvyTensorEagerFunction<T>>(mem, nullptr, zero_val);
     }
   };
@@ -312,6 +317,21 @@ namespace IvyMath{
       using dtype_t = typename T::dtype_t;
       // Copy the tensor structure; elements will be overwritten element-wise.
       T res(fcn);
+      // Whole-tensor leaf identity: when the differentiation target *is* this
+      // tensor, ∂t/∂t is the (element-wise) diagonal, i.e. every element's
+      // local derivative is 1. This lets a contiguous tensor variable serve as
+      // a first-class differentiation seed, exactly like a scalar variable.
+      if (var && __STATIC_CAST__(IvyBaseNode const*, std_mem::addressof(fcn)) == var.get()){
+        for (IvyTensorDim_t i=0; i<fcn.num_elements(); ++i){
+          if constexpr (is_pointer_v<dtype_t>){
+            using inner_t = typename dtype_t::element_type;
+            res[i] = make_IvyThreadSafePtr<inner_t>(var.get_memory_type(), var.gpu_stream(), inner_t(One<fundamental_data_t<inner_t>>()));
+          } else {
+            res[i] = dtype_t(One<fundamental_data_t<dtype_t>>());
+          }
+        }
+        return make_IvyThreadSafePtr<T>(var.get_memory_type(), var.gpu_stream(), res);
+      }
       for (IvyTensorDim_t i=0; i<fcn.num_elements(); ++i){
         // Dispatch to the specialization for the *element* type, not for T itself.
         auto grad = function_gradient<dtype_t>::get(fcn[i], var);
