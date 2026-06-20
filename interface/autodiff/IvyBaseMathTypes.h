@@ -26,7 +26,7 @@ namespace _fcn_eval{
     || (
       !std_ttraits::is_base_of_v<IvyBaseModifiable, std_ttraits::remove_cv_t<T>>
       &&
-      (is_constant_v<T> || is_variable_v<T>)
+      is_leaf_v<T>
     )
   )
   > __HOST_DEVICE__ void eval(T const&) __NOEXCEPT__ {}
@@ -34,7 +34,7 @@ namespace _fcn_eval{
     typename T, ENABLE_IF_BOOL(
       std_ttraits::is_base_of_v<IvyBaseModifiable, std_ttraits::remove_cv_t<T>>
       &&
-      (is_constant_v<T> || is_variable_v<T>)
+      is_leaf_v<T>
     )
   > __HOST_DEVICE__ void eval(T& fcn){ fcn.set_modified(false); }
   template<typename T, ENABLE_IF_BOOL(!is_tensor_v<T> && is_function_v<T>)>
@@ -80,10 +80,10 @@ namespace IvyMath{
   the value_t type of the class if there is one, or an arithmetic type otherwise.
   This means if
   - T = arithmetic type, reduced_value_t = T.
-  - T = Ivy(Constant,'')Variable<U>, reduced_value_t = U (arithmetic type).
-  - T = IvyComplexVariable<U>, reduced_value_t = IvyComplexVariable<U>.
+  - T = IvyScalar<U>, reduced_value_t = U (arithmetic type).
+  - T = IvyComplex<U>, reduced_value_t = IvyComplex<U>.
   - T = IvyTensor<U>, reduced_value_t = IvyTensor<U>.
-  - T = IvyFunction<U>, reduced_value_t = IvyFunction<U>::value_t, which is an IvyVariable/ComplexVariable/Tensor<R>.
+  - T = IvyFunction<U>, reduced_value_t = IvyFunction<U>::value_t, which is an IvyScalar/ComplexVariable/Tensor<R>.
   */
   template<typename T> struct reduced_value_type{
     template<typename U> static __HOST_DEVICE__ auto test_vtype(int) -> typename U::value_t;
@@ -98,7 +98,7 @@ namespace IvyMath{
   the dtype_t type of the class if there is one, or an arithmetic type otherwise.
   This means if
   - T = arithmetic type, reduced_data_t = T.
-  - T = Ivy(Constant,'',Complex)Variable<U>, reduced_data_t = U (arithmetic type).
+  - T = IvyScalar<U> or IvyComplex<U>, reduced_data_t = U (arithmetic type).
   - T = IvyTensor<U>, reduced_data_t = U (which is not necessarily an arithmetic type).
   - T = IvyFunction<U>, reduced_data_t = IvyFunction<U>::dtype_t.
   */
@@ -121,9 +121,9 @@ namespace IvyMath{
   In other words, fundamental_data_t looks for the dtype_t recursively in IvyFunction and IvyTensor
   while reduced_data_t looks for the dtype_t only in the top level class.
   It is specialized further for IvyFunction and IvyTensor later on.
-  To give a concrete example, if T = IvyFunction<IvyTensor<IvyVariable<double>>>,
+  To give a concrete example, if T = IvyFunction<IvyTensor<IvyScalar<double>>>,
   - fundamental_data_t<T> = double, but
-  - reduced_data_t<T> = IvyTensor<IvyVariable<double>>.
+  - reduced_data_t<T> = IvyTensor<IvyScalar<double>>.
   */
   template<typename T> struct fundamental_data_type{
     using type = reduced_data_t<T>;
@@ -168,11 +168,11 @@ namespace IvyMath{
   unless the type is a function type, in which case it is the reduced_value_t of the functions unpacked type.
   This means if
   - T = arithmetic type, unpacked_reduced_value_t = T.
-  - T = Ivy(Constant,'')Variable<U>, unpacked_reduced_value_t = U (arithmetic type).
-  - T = IvyComplexVariable<U>, unpacked_reduced_value_t = IvyComplexVariable<U>.
+  - T = IvyScalar<U>, unpacked_reduced_value_t = U (arithmetic type).
+  - T = IvyComplex<U>, unpacked_reduced_value_t = IvyComplex<U>.
   - T = IvyTensor<U>, unpacked_reduced_value_t = IvyTensor<U>.
   - T = IvyFunction<U>, unpacked_reduced_value_t = reduced_value_t<IvyFunction<U>::value_t>,
-    which is R for Ivy(Constant,'')Variable<R> or IvyComplexVariable/Tensor<R> otherwise.
+    which is R for IvyScalar<R> or IvyComplex/Tensor<R> otherwise.
   */
   template<typename T> struct unpacked_reduced_value_type{
     using type = reduced_value_t<unpack_if_function_t<T>>;

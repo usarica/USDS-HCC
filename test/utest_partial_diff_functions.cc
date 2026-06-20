@@ -22,7 +22,7 @@
 #include "common_test_defs.h"
 
 #include "autodiff/arithmetic/IvyMathBaseArithmetic.h"
-#include "autodiff/basic_nodes/IvyComplexVariable.h"
+#include "autodiff/basic_nodes/IvyComplex.h"
 
 #include <cmath>
 #include <complex>
@@ -49,7 +49,7 @@ static bool close(double a, double b, double tol = 1e-9){ return std::abs(a - b)
 static void test_real(){
   __PRINT_INFO__("--- real-domain function targets ---\n");
   constexpr double x0 = 1.0;
-  auto x = Variable<double>(IvyMemoryType::Host, nullptr, x0);
+  auto x = Scalar<double>(IvyMemoryType::Host, nullptr, x0);
   auto u = Exp(x);            // u = exp(x)
   auto h = Sin(u);           // h = sin(u) = sin(exp(x))
 
@@ -73,7 +73,7 @@ static void test_real(){
   check(close(g->gradient(u)->value().value(), std::cos(uval) + 1.0), "d(sin(u)+u)/du == cos(u)+1");
 
   // A function that does not depend on the target gives zero.
-  auto y = Variable<double>(IvyMemoryType::Host, nullptr, 2.0);
+  auto y = Scalar<double>(IvyMemoryType::Host, nullptr, 2.0);
   auto w = Exp(y);
   check(close(h->gradient(w)->value().value(), 0.0), "dh/dw == 0 (independent function)");
 }

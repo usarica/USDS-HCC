@@ -19,7 +19,7 @@ int main(){
   IvyGPUStream* stream = IvyStreamUtils::make_global_gpu_stream();
   bool ok = true;
 
-  auto x = Variable<double>(IvyMemoryType::Host, stream, 1.0);
+  auto x = Scalar<double>(IvyMemoryType::Host, stream, 1.0);
   auto f = Sin(Exp(x));
   auto grad_x = f->gradient(x);
   double const expected_dx = std::cos(std::exp(1.0))*std::exp(1.0);
@@ -28,7 +28,7 @@ int main(){
   ok = ok && std::abs(got_dx-expected_dx) < tol;
 
   IvyTensorShape shape({ 2, 1 });
-  auto t = Tensor<IvyVariablePtr_t<double>>(IvyMemoryType::Host, stream, shape, x);
+  auto t = Tensor<IvyScalarPtr_t<double>>(IvyMemoryType::Host, stream, shape, x);
   auto tf = Exp(t);
   auto grad_t = tf->gradient(x);
   for (IvyTensorDim_t i = 0; i < grad_t->value().num_elements(); ++i){

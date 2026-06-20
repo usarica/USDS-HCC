@@ -1,6 +1,5 @@
-#include "autodiff/basic_nodes/IvyConstant.h"
-#include "autodiff/basic_nodes/IvyVariable.h"
-#include "autodiff/basic_nodes/IvyComplexVariable.h"
+#include "autodiff/basic_nodes/IvyScalar.h"
+#include "autodiff/basic_nodes/IvyComplex.h"
 #include "autodiff/basic_nodes/IvyTensor.h"
 #include "autodiff/arithmetic/IvyMathBaseArithmetic.h"
 
@@ -11,8 +10,8 @@ using namespace IvyMath;
 
 void utest(){
   auto cplx = Complex<double>(std_ivy::IvyMemoryType::Host, nullptr, 1, 2);
-  auto rvar = Variable<double>(std_ivy::IvyMemoryType::Host, nullptr, 3);
-  auto rconst = Constant<double>(std_ivy::IvyMemoryType::Host, nullptr, 5);
+  auto rvar = Scalar<double>(std_ivy::IvyMemoryType::Host, nullptr, 3);
+  auto rconst = Scalar<double>(std_ivy::IvyMemoryType::Host, nullptr, 5);
 
   __PRINT_INFO__("cplx = "); print_value(cplx);
   __PRINT_INFO__("-cplx = "); print_value(-(*cplx));
@@ -36,11 +35,11 @@ void utest(){
   t3d->at({ 0,1,2 }) = 3.14;
   print_value(t3d);
 
-  auto t3dp = Tensor<IvyMath::IvyConstantPtr_t<double>>(
+  auto t3dp = Tensor<IvyMath::IvyScalarPtr_t<double>>(
     tshape.get_memory_type(),
     tshape.gpu_stream(),
     tshape,
-    Constant<double>(
+    Scalar<double>(
       tshape.get_memory_type(),
       tshape.gpu_stream(),
       5.
@@ -64,7 +63,7 @@ void utest(){
   IvyGPUStream* stream = IvyStreamUtils::make_global_gpu_stream();
   using t3dp_allocator = std_mem::allocator<decltype(t3dp)>;
   using t3dp_allocator_traits = std_mem::allocator_traits<t3dp_allocator>;
-  IvyMath::IvyTensorPtr_t<IvyMath::IvyConstantPtr_t<double>>* t3dpn = t3dp_allocator_traits::allocate(1, IvyMemoryType::Host, *stream);
+  IvyMath::IvyTensorPtr_t<IvyMath::IvyScalarPtr_t<double>>* t3dpn = t3dp_allocator_traits::allocate(1, IvyMemoryType::Host, *stream);
   t3dp_allocator_traits::transfer(t3dpn, &t3dp, 1, IvyMemoryType::Host, IvyMemoryType::Host, *stream);
   __PRINT_INFO__("t3dpn transfer complete!\n");
   print_value(*t3dpn);

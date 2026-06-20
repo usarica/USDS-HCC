@@ -1,6 +1,5 @@
-#include "autodiff/basic_nodes/IvyConstant.h"
-#include "autodiff/basic_nodes/IvyVariable.h"
-#include "autodiff/basic_nodes/IvyComplexVariable.h"
+#include "autodiff/basic_nodes/IvyScalar.h"
+#include "autodiff/basic_nodes/IvyComplex.h"
 #include "autodiff/basic_nodes/IvyTensor.h"
 #include "autodiff/arithmetic/IvyMathBaseArithmetic.h"
 
@@ -10,8 +9,8 @@ int main(){
   using namespace IvyMath;
 
   auto cplx = Complex<double>(IvyMemoryType::Host, nullptr, 1, 2);
-  auto rvar = Variable<double>(IvyMemoryType::Host, nullptr, 3);
-  auto rconst = Constant<double>(IvyMemoryType::Host, nullptr, 5);
+  auto rvar = Scalar<double>(IvyMemoryType::Host, nullptr, 3);
+  auto rconst = Scalar<double>(IvyMemoryType::Host, nullptr, 5);
 
   __PRINT_INFO__("cplx = "); print_value(cplx);
   __PRINT_INFO__("-cplx = "); print_value(-(*cplx));
@@ -73,18 +72,18 @@ int main(){
   } \
   __PRINT_INFO__("*****************\n");
 
-  FCN_TEST_COMMAND(Exp, rvar, Constant<double>(IvyMemoryType::Host, nullptr, 20.0855), Constant<double>(IvyMemoryType::Host, nullptr, 20.0855));
-  FCN_TEST_COMMAND(Log, rvar, Constant<double>(IvyMemoryType::Host, nullptr, 1.098612), Constant<double>(IvyMemoryType::Host, nullptr, 0.333333));
-  FCN_TEST_COMMAND(Sin, rvar, Constant<double>(IvyMemoryType::Host, nullptr, 0.14112), Constant<double>(IvyMemoryType::Host, nullptr, -0.98999));
-  FCN_TEST_COMMAND(Cos, rvar, Constant<double>(IvyMemoryType::Host, nullptr, -0.98999), Constant<double>(IvyMemoryType::Host, nullptr, -0.14112));
-  FCN_TEST_COMMAND(Tan, rvar, Constant<double>(IvyMemoryType::Host, nullptr, -0.14255), Constant<double>(IvyMemoryType::Host, nullptr, 1.02032));
-  FCN_TEST_COMMAND(Cot, rvar, Constant<double>(IvyMemoryType::Host, nullptr, -7.01525), Constant<double>(IvyMemoryType::Host, nullptr, -50.2138));
-  FCN_TEST_COMMAND(Sec, rvar, Constant<double>(IvyMemoryType::Host, nullptr, -1.01011), Constant<double>(IvyMemoryType::Host, nullptr, 0.143987));
-  FCN_TEST_COMMAND(Csc, rvar, Constant<double>(IvyMemoryType::Host, nullptr, 7.08617), Constant<double>(IvyMemoryType::Host, nullptr, 49.7113));
-  FCN_TEST_COMMAND(SinH, rvar, Constant<double>(IvyMemoryType::Host, nullptr, 10.0179), Constant<double>(IvyMemoryType::Host, nullptr, 10.0677));
-  FCN_TEST_COMMAND(CosH, rvar, Constant<double>(IvyMemoryType::Host, nullptr, 10.0677), Constant<double>(IvyMemoryType::Host, nullptr, 10.0179));
-  FCN_TEST_COMMAND(Erf, rvar, Constant<double>(IvyMemoryType::Host, nullptr, 0.999978), Constant<double>(IvyMemoryType::Host, nullptr, 0.000139253));
-  FCN_TEST_COMMAND(Erfc, rvar, Constant<double>(IvyMemoryType::Host, nullptr, 0.0000220905), Constant<double>(IvyMemoryType::Host, nullptr, -0.000139253));
+  FCN_TEST_COMMAND(Exp, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, 20.0855), Scalar<double>(IvyMemoryType::Host, nullptr, 20.0855));
+  FCN_TEST_COMMAND(Log, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, 1.098612), Scalar<double>(IvyMemoryType::Host, nullptr, 0.333333));
+  FCN_TEST_COMMAND(Sin, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, 0.14112), Scalar<double>(IvyMemoryType::Host, nullptr, -0.98999));
+  FCN_TEST_COMMAND(Cos, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, -0.98999), Scalar<double>(IvyMemoryType::Host, nullptr, -0.14112));
+  FCN_TEST_COMMAND(Tan, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, -0.14255), Scalar<double>(IvyMemoryType::Host, nullptr, 1.02032));
+  FCN_TEST_COMMAND(Cot, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, -7.01525), Scalar<double>(IvyMemoryType::Host, nullptr, -50.2138));
+  FCN_TEST_COMMAND(Sec, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, -1.01011), Scalar<double>(IvyMemoryType::Host, nullptr, 0.143987));
+  FCN_TEST_COMMAND(Csc, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, 7.08617), Scalar<double>(IvyMemoryType::Host, nullptr, 49.7113));
+  FCN_TEST_COMMAND(SinH, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, 10.0179), Scalar<double>(IvyMemoryType::Host, nullptr, 10.0677));
+  FCN_TEST_COMMAND(CosH, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, 10.0677), Scalar<double>(IvyMemoryType::Host, nullptr, 10.0179));
+  FCN_TEST_COMMAND(Erf, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, 0.999978), Scalar<double>(IvyMemoryType::Host, nullptr, 0.000139253));
+  FCN_TEST_COMMAND(Erfc, rvar, Scalar<double>(IvyMemoryType::Host, nullptr, 0.0000220905), Scalar<double>(IvyMemoryType::Host, nullptr, -0.000139253));
   FCN_TEST_COMMAND(Faddeeva, rvar, Complex<double>(IvyMemoryType::Host, nullptr, 0.000123410, 0.201157), Complex<double>(IvyMemoryType::Host, nullptr, -0.000740459, -0.0785647));
   FCN_TEST_COMMAND(FaddeevaFast, rvar, Complex<double>(IvyMemoryType::Host, nullptr, 0.000123410, 0.201157), Complex<double>(IvyMemoryType::Host, nullptr, -0.000740459, -0.0785647));
 
@@ -182,7 +181,7 @@ int main(){
   __PRINT_INFO__("grad_fcn_manual_cubed(%s) = ", typeid(grad_fcn_manual_cubed).name());
   print_value(grad_fcn_manual_cubed->value());
 
-  auto fcn_pow_cubed = Pow(cplx, Constant<int>(IvyMemoryType::Host, nullptr, 3));
+  auto fcn_pow_cubed = Pow(cplx, Scalar<int>(IvyMemoryType::Host, nullptr, 3));
   __PRINT_INFO__("fcn_pow_cubed = ");
   print_value(fcn_pow_cubed);
   __PRINT_INFO__("fcn_pow_cubed addr. = %p\n", fcn_pow_cubed.get());

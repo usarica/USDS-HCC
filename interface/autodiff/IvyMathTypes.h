@@ -12,13 +12,11 @@ namespace IvyMath{
     using fund_type = more_precise_fundamental_t<T, U>;
 
     static constexpr bool is_arithmetic_T = is_arithmetic_v<ctype_T>;
-    static constexpr bool is_const_T = is_constant_v<ctype_T>;
     static constexpr bool is_var_T = is_real_v<ctype_T>;
     static constexpr bool is_complex_T = is_complex_v<ctype_T>;
     static constexpr bool is_tensor_T = is_tensor_v<ctype_T>;
 
     static constexpr bool is_arithmetic_U = is_arithmetic_v<ctype_U>;
-    static constexpr bool is_const_U = is_constant_v<ctype_U>;
     static constexpr bool is_var_U = is_real_v<ctype_U>;
     static constexpr bool is_complex_U = is_complex_v<ctype_U>;
     static constexpr bool is_tensor_U = is_tensor_v<ctype_U>;
@@ -30,16 +28,13 @@ namespace IvyMath{
       ||
       (!is_tensor_T && !is_complex_T && is_var_U)
       ||
-      (!is_tensor_T && !is_complex_T && !is_var_T && is_const_U)
-      ||
-      (!is_tensor_T && !is_complex_T && !is_var_T && !is_const_T && is_arithmetic_U)
+      (!is_tensor_T && !is_complex_T && !is_var_T && is_arithmetic_U)
       );
 
     using left_type = std_ttraits::conditional_t<swap_T_U, ctype_U, ctype_T>;
     using right_type = std_ttraits::conditional_t<swap_T_U, ctype_T, ctype_U>;
 
     static constexpr bool is_arithmetic_left = (swap_T_U ? is_arithmetic_U : is_arithmetic_T);
-    static constexpr bool is_const_left = (swap_T_U ? is_const_U : is_const_T);
     static constexpr bool is_var_left = (swap_T_U ? is_var_U : is_var_T);
     static constexpr bool is_complex_left = (swap_T_U ? is_complex_U : is_complex_T);
     static constexpr bool is_tensor_left = (swap_T_U ? is_tensor_U : is_tensor_T);
@@ -49,15 +44,11 @@ namespace IvyMath{
       IvyTensor<fund_type>,
       std_ttraits::conditional_t<
         is_complex_left,
-        IvyComplexVariable<fund_type>,
+        IvyComplex<fund_type>,
         std_ttraits::conditional_t<
           is_var_left,
-          IvyVariable<fund_type>,
-          std_ttraits::conditional_t<
-            is_const_left,
-            IvyConstant<fund_type>,
-            fund_type
-          >
+          IvyScalar<fund_type>,
+          fund_type
         >
       >
     >;

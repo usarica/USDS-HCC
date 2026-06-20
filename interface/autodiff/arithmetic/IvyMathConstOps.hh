@@ -3,7 +3,7 @@
 
 
 #include "config/IvyCompilerConfig.h"
-#include "autodiff/basic_nodes/IvyComplexVariable.h"
+#include "autodiff/basic_nodes/IvyComplex.h"
 #include "std_ivy/IvyTypeTraits.h"
 
 
@@ -26,7 +26,7 @@ namespace IvyMath{
   template<typename T, ENABLE_IF_ARITHMETIC(T)> __HOST_DEVICE__ constexpr T TwoSqrtPi();
   template<typename T, ENABLE_IF_ARITHMETIC(T)> __HOST_DEVICE__ constexpr T TwoOverSqrtPi();
   template<typename T, ENABLE_IF_ARITHMETIC(T)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ constexpr T NtimesPi(T const& n);
-  template<typename T, ENABLE_IF_ARITHMETIC(T)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ IvyComplexVariable<T> UnitIm();
+  template<typename T, ENABLE_IF_ARITHMETIC(T)> __INLINE_FCN_FORCE__ __HOST_DEVICE__ IvyComplex<T> UnitIm();
 }
 
 

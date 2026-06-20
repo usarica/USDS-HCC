@@ -24,7 +24,7 @@ namespace IvyMath{
   template<typename T, ENABLE_IF_ARITHMETIC_IMPL(T)> __HOST_DEVICE__ constexpr T TwoSqrtPi(){ return 3.54490770181103205459633496668; }
   template<typename T, ENABLE_IF_ARITHMETIC_IMPL(T)> __HOST_DEVICE__ constexpr T TwoOverSqrtPi(){ return 1.12837916709551257389615890312; }
   template<typename T, ENABLE_IF_ARITHMETIC_IMPL(T)> __HOST_DEVICE__ constexpr T NtimesPi(T const& n){ return T(n)*Pi<T>(); }
-  template<typename T, ENABLE_IF_ARITHMETIC_IMPL(T)> __HOST_DEVICE__ IvyComplexVariable<T> UnitIm(){ return IvyComplexVariable<T>(0, 1); }
+  template<typename T, ENABLE_IF_ARITHMETIC_IMPL(T)> __HOST_DEVICE__ IvyComplex<T> UnitIm(){ return IvyComplex<T>(0, 1); }
 }
 
 

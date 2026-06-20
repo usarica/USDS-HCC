@@ -1,9 +1,9 @@
 /**
  * @file tensor_variable_benchmark.cc
  * @brief Benchmark of the contiguous differentiable tensor leaf
- *        (IvyTensor<IvyTensorVariableCell<T>>, created via TensorVariable<T>)
+ *        (IvyTensor<IvyTensorScalarCell<T>>, created via TensorScalar<T>)
  *        against the legacy array-of-pointers (AoP) differentiable tensor
- *        (IvyTensor<IvyVariablePtr_t<T>>) on memory and gradient time.
+ *        (IvyTensor<IvyScalarPtr_t<T>>) on memory and gradient time.
  *
  * Build (CPU): part of `make all` -> executables/tensor_variable_benchmark
  * Run:         ./executables/tensor_variable_benchmark [N]
@@ -45,8 +45,8 @@ static long long ns(){
 int main(int argc, char** argv){
   IvyTensorDim_t const Nmax = (argc > 1) ? static_cast<IvyTensorDim_t>(std::atoll(argv[1])) : 500000;
 
-  std::printf("sizeof(IvyTensorVariableCell<double>) = %zu bytes (vs IvyVariable<double> with client manager)\n\n",
-    sizeof(IvyTensorVariableCell<double>));
+  std::printf("sizeof(IvyTensorScalarCell<double>) = %zu bytes (vs IvyScalar<double> with client manager)\n\n",
+    sizeof(IvyTensorScalarCell<double>));
   std::printf("=== Contiguous differentiable tensor leaf: f = Exp(t), grad wrt t ===\n");
   std::printf("%-10s %-12s %-14s %-14s %-12s\n", "N", "build(ms)", "forward(ms)", "gradient(ms)", "RSS_delta(MB)");
 
@@ -54,7 +54,7 @@ int main(int argc, char** argv){
     long const base = rss_kb();
     IvyTensorShape const shape({ n });
     long long const a = ns();
-    auto t = TensorVariable<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorVariableCell<double>(0.5));
+    auto t = TensorScalar<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorScalarCell<double>(0.5));
     long long const b = ns();
     auto f = Exp(t);
     auto const& vf = f->value();
@@ -68,7 +68,7 @@ int main(int argc, char** argv){
       vf[0].value(), vg[0].value());
   }
 
-  std::printf("\nReference (legacy AoP IvyTensor<IvyVariablePtr_t<double>>, same machine):\n");
+  std::printf("\nReference (legacy AoP IvyTensor<IvyScalarPtr_t<double>>, same machine):\n");
   std::printf("  N=5e5: RSS ~2342 MB, forward ~224 ms, gradient ~1639 ms (~4.7 KB/element).\n");
   std::printf("  Contiguous leaf: ~8 B/element data + one fused element-wise pass.\n");
   return 0;

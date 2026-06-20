@@ -12,7 +12,7 @@ int main(){
   using namespace std_ivy;
   using namespace IvyMath;
 
-  auto x = Variable<double>(IvyMemoryType::Host, nullptr, 1.0);
+  auto x = Scalar<double>(IvyMemoryType::Host, nullptr, 1.0);
   auto f = Sin(Exp(x));
   auto g = f->gradient(x);
 

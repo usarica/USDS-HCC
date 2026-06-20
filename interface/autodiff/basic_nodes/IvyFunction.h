@@ -3,9 +3,8 @@
 
 
 #include "autodiff/base_types/IvyBaseModifiable.h"
-#include "autodiff/basic_nodes/IvyConstant.h"
-#include "autodiff/basic_nodes/IvyVariable.h"
-#include "autodiff/basic_nodes/IvyComplexVariable.h"
+#include "autodiff/basic_nodes/IvyScalar.h"
+#include "autodiff/basic_nodes/IvyComplex.h"
 #include "autodiff/basic_nodes/IvyTensor.h"
 #include "autodiff/IvyBaseMathTypes.h"
 #include "autodiff/arithmetic/IvyMathConstOps.h"
@@ -27,10 +26,7 @@ namespace IvyMath{
       is_tensor_v<Domain>,
       IvyTensor<dtype_t>, std_ttraits::conditional_t<
         is_complex_v<Domain>,
-        IvyComplexVariable<dtype_t>, std_ttraits::conditional_t<
-          is_real_v<Domain>,
-          IvyVariable<dtype_t>, IvyConstant<dtype_t>
-        >
+        IvyComplex<dtype_t>, IvyScalar<dtype_t>
       >
     >;
   };

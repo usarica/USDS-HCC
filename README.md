@@ -82,7 +82,7 @@ The library is organised in four conceptual layers stacked on top of each other:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  autodiff/  — Differentiation engine                            │
-│    basic_nodes/   IvyConstant, IvyVariable, IvyComplexVariable  │
+│    basic_nodes/   IvyScalar, IvyComplex                         │
 │                   IvyTensor, IvyFunction                        │
 │    arithmetic/    IvyMathBaseArithmetic, IvyMathFunctionPrimitives│
 │                   IvyMathConstOps, IvyMathTypes                 │
@@ -289,7 +289,7 @@ using namespace IvyMath;
 int main(){
   // ── Scalar autodiff ──────────────────────────────────────────────────────
   // Create a differentiable variable x = 2.0
-  auto x = Variable<double>(IvyMemoryType::Host, nullptr, 2.0);
+  auto x = Scalar<double>(IvyMemoryType::Host, nullptr, 2.0);
 
   // f(x) = exp(x)
   auto f = Exp(x);
@@ -312,8 +312,8 @@ int main(){
 
   // ── Tensor autodiff ──────────────────────────────────────────────────────
   // All 6 elements of a 2×3 tensor share the same variable x=3.0
-  auto y  = Variable<double>(IvyMemoryType::Host, nullptr, 3.0);
-  auto t  = Tensor<IvyVariablePtr_t<double>>(
+  auto y  = Scalar<double>(IvyMemoryType::Host, nullptr, 3.0);
+  auto t  = Tensor<IvyScalarPtr_t<double>>(
                 IvyMemoryType::Host, nullptr,
                 IvyTensorShape({2, 3}), y);
 
@@ -343,47 +343,40 @@ All autodiff types live in the `IvyMath` namespace (header:
 `autodiff/arithmetic/IvyMathBaseArithmetic.h` or the umbrella
 `IvyHCC.h`).
 
-### 6.1 `IvyConstant<T>`
+### 6.1 `IvyScalar<T>`
 
-An immutable scalar node. Its value is fixed at construction; it has no
-gradient (the gradient of a constant is always zero).
-
-```cpp
-// Construct from a value
-auto c = Constant<double>(IvyMemoryType::Host, nullptr, 3.14);
-double v = c->value().value();  // 3.14
-
-// Constants never satisfy depends_on — no gradient computation needed.
-```
-
-Template parameter `T` is the numeric type (e.g., `double`, `float`).
-
-### 6.2 `IvyVariable<T>`
-
-A differentiable leaf node. `gradient(var)` returns 1 if `var` is the same
-object as this variable, 0 otherwise.
+A real differentiable leaf node. `gradient(var)` returns 1 if `var` is the same
+object as this scalar, 0 otherwise. Differentiation is fully dynamic (by address
+identity), so there is no separate immutable "constant" leaf type — any scalar
+may be differentiated with respect to, and a fixed numeric seed is simply a
+scalar that nothing else depends on.
 
 ```cpp
-auto x = Variable<double>(IvyMemoryType::Host, nullptr, 2.5);
+auto x = Scalar<double>(IvyMemoryType::Host, nullptr, 2.5);
 
-double val = x->value().value();   // 2.5
+double val = x->value();   // 2.5
 
 // Modify and re-evaluate
 x->set_value(4.0);
 // set_modified() is called automatically; the next call to value()
 // will reflect the new value.
+
+// A fixed numeric seed (formerly an IvyConstant) is just a Scalar:
+auto c = Scalar<double>(IvyMemoryType::Host, nullptr, 3.14);
 ```
 
-`IvyVariablePtr_t<T>` is a convenience alias for
-`IvyThreadSafePtr_t<IvyVariable<T>>`.
+`IvyScalarPtr_t<T>` is a convenience alias for
+`IvyThreadSafePtr_t<IvyScalar<T>>`.
 
-### 6.3 `IvyComplexVariable<T>`
+Template parameter `T` is the numeric type (e.g., `double`, `float`).
 
-A complex differentiable leaf. Real and imaginary parts are stored as
-`IvyVariable<T>`.
+### 6.2 `IvyComplex<T>`
+
+A complex differentiable leaf. Real and imaginary parts are stored as bare
+`T` components (Cartesian representation).
 
 ```cpp
-auto z = ComplexVariable<double>(IvyMemoryType::Host, nullptr, 1.0, 2.0);
+auto z = Complex<double>(IvyMemoryType::Host, nullptr, 1.0, 2.0);
 
 double re = z->value().Re();   // 1.0
 double im = z->value().Im();   // 2.0
@@ -392,17 +385,17 @@ double im = z->value().Im();   // 2.0
 // IvyNodeSelfRelations::conjugate(*z);
 ```
 
-### 6.4 `IvyTensor<T>`
+### 6.3 `IvyTensor<T>`
 
 An N-dimensional array where the element type `T` is typically
-`IvyVariablePtr_t<double>` for an autodiff tensor.
+`IvyScalarPtr_t<double>` for an autodiff tensor.
 
 ```cpp
 IvyTensorShape shape({2, 3});  // 2 rows, 3 columns
-auto x = Variable<double>(IvyMemoryType::Host, nullptr, 1.0);
+auto x = Scalar<double>(IvyMemoryType::Host, nullptr, 1.0);
 
 // Create a 2×3 tensor where all elements point to x
-auto t = Tensor<IvyVariablePtr_t<double>>(
+auto t = Tensor<IvyScalarPtr_t<double>>(
     shape.get_memory_type(), shape.gpu_stream(), shape, x);
 
 IvyTensorDim_t n  = t->num_elements();        // 6
@@ -411,13 +404,13 @@ IvyTensorRank_t r = t->rank();                // 2
 ```
 
 **Supported element types:**
-- `IvyVariablePtr_t<double>` — differentiable real tensor
-- `IvyVariablePtr_t<float>` — differentiable single-precision tensor
+- `IvyScalarPtr_t<double>` — differentiable real tensor
+- `IvyScalarPtr_t<float>` — differentiable single-precision tensor
 - Arithmetic types (`double`, `float`, etc.) — non-differentiable tensor
 
 `IvyTensorPtr_t<T>` is the corresponding `IvyThreadSafePtr_t<IvyTensor<T>>`.
 
-### 6.5 `IvyFunction<P, Domain, GradientDomain>`
+### 6.4 `IvyFunction<P, Domain, GradientDomain>`
 
 The abstract base class for all computation-graph nodes. Concrete derived
 classes are created by the arithmetic operator functions, not constructed
@@ -434,7 +427,7 @@ Key members:
 `grad_t` = `IvyFunction<P, Domain>` (same domains). `gradient()` returns
 `IvyThreadSafePtr_t<grad_t>`.
 
-### 6.6 Arithmetic operations
+### 6.5 Arithmetic operations
 
 All operations accept both pointer and non-pointer arguments via overloads.
 The pointer overloads register the result in the client-manager graph.
@@ -461,20 +454,20 @@ The pointer overloads register the result in the client-manager graph.
 
 The Faddeeva function `w(x) = exp(-x²)·erfc(-ix)` accepts both real and complex
 arguments.  For a real input `x`, it returns a complex-valued result.  This is
-accessed via `Faddeeva(x)` where `x` is an `IvyVariable<T>` or
-`IvyTensor<IvyVariable<T>>`.  The gradient `dw/dz = (2i/√π) − 2z·w(z)` is
+accessed via `Faddeeva(x)` where `x` is an `IvyScalar<T>` or
+`IvyTensor<IvyScalar<T>>`.  The gradient `dw/dz = (2i/√π) − 2z·w(z)` is
 complex-valued even for real input.
 
 Comparison and logic operators (`==`, `!=`, `<`, `<=`, `>`, `>=`) are
 available for real types but return `bool` — they do **not** participate in
 the gradient graph and have no `gradient()` method.
 
-### 6.7 Gradient of a composition
+### 6.6 Gradient of a composition
 
 Chain-rule propagation is automatic. For example:
 
 ```cpp
-auto x = Variable<double>(IvyMemoryType::Host, nullptr, 1.0);
+auto x = Scalar<double>(IvyMemoryType::Host, nullptr, 1.0);
 auto f = Sin(Exp(x));           // sin(e^x)
 auto g = f->gradient(x);        // cos(e^x) · e^x
 double val = g->value().value();
@@ -501,11 +494,11 @@ the lazy multiply graph.
 using namespace IvyMath;
 
 // Scalar variable, x = 3.0
-auto x = Variable<double>(IvyMemoryType::Host, nullptr, 3.0);
+auto x = Scalar<double>(IvyMemoryType::Host, nullptr, 3.0);
 
 // 2×3 tensor where every element IS x (shared pointer)
 IvyTensorShape shape({2, 3});
-auto t = Tensor<IvyVariablePtr_t<double>>(
+auto t = Tensor<IvyScalarPtr_t<double>>(
     IvyMemoryType::Host, nullptr, shape, x);
 ```
 
@@ -515,7 +508,7 @@ auto t = Tensor<IvyVariablePtr_t<double>>(
 auto ft = Exp(t);   // IvyThreadSafePtr_t<IvyFunction<tensor, tensor_domain_tag>>
 
 // Evaluate (lazy)
-auto const& out = ft->value();    // IvyTensor<IvyVariablePtr_t<double>>
+auto const& out = ft->value();    // IvyTensor<IvyScalarPtr_t<double>>
 for (IvyTensorDim_t i = 0; i < out.num_elements(); ++i)
     printf("Exp(t)[%llu] = %.6f\n", (unsigned long long)i, out[i]->value());
 // Prints exp(3) ≈ 20.085537 for all 6 elements.

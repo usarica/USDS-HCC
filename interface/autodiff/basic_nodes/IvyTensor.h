@@ -236,7 +236,6 @@ namespace IvyMath{
   template<typename T> struct IvyNodeSelfRelations<IvyTensor<T>>{
     static constexpr bool is_conjugatable = is_conjugatable<T>;
     static __HOST_DEVICE__ constexpr bool is_differentiable(IvyTensor<T> const& x){
-      if constexpr (is_constant_v<IvyTensor<T>>) return false;
       bool res = false;
       for (IvyTensorDim_t i=0; i<x.num_elements(); ++i){ res |= IvyMath::is_differentiable(x.data_[i]); if (res) break; }
       return res;
@@ -311,18 +310,18 @@ namespace IvyMath{
   /**
    * @brief No-op client registration for contiguous value-type cell tensors.
    *
-   * Cell elements (real/complex, variable/constant) carry no @c IvyClientManager,
-   * and the owning tensor node already tracks graph dependents, so there is
-   * nothing to register per element. This keeps a cell tensor leaf at one
-   * contiguous buffer with zero per-element heap allocations.
+   * Cell elements (real/complex) carry no @c IvyClientManager, and the owning
+   * tensor node already tracks graph dependents, so there is nothing to register
+   * per element. This keeps a cell tensor leaf at one contiguous buffer with zero
+   * per-element heap allocations.
    */
-  template<typename T, typename ValueTag>
-  struct tensor_data_client_updator<IvyTensorRealCell<T, ValueTag>, false>{
-    static __INLINE_FCN_RELAXED__ __HOST_DEVICE__ void update(IvyTensorPtr_t<IvyTensorRealCell<T, ValueTag>>& /*tensor*/){}
+  template<typename T>
+  struct tensor_data_client_updator<IvyTensorScalarCell<T>, false>{
+    static __INLINE_FCN_RELAXED__ __HOST_DEVICE__ void update(IvyTensorPtr_t<IvyTensorScalarCell<T>>& /*tensor*/){}
   };
-  template<typename T, typename ValueTag>
-  struct tensor_data_client_updator<IvyTensorComplexCell<T, ValueTag>, false>{
-    static __INLINE_FCN_RELAXED__ __HOST_DEVICE__ void update(IvyTensorPtr_t<IvyTensorComplexCell<T, ValueTag>>& /*tensor*/){}
+  template<typename T>
+  struct tensor_data_client_updator<IvyTensorComplexCell<T>, false>{
+    static __INLINE_FCN_RELAXED__ __HOST_DEVICE__ void update(IvyTensorPtr_t<IvyTensorComplexCell<T>>& /*tensor*/){}
   };
 
 
@@ -339,27 +338,17 @@ namespace IvyMath{
    * contiguous buffer (no per-element heap node / control block / clients
    * vector), carrying the correct domain/value tags so they flow through the
    * existing IvyMath ops:
-   *   - TensorVariable<T>        : real variable leaf  (a differentiation seed;
+   *   - TensorScalar<T>        : real value leaf  (a differentiation seed;
    *     @c f->gradient(t) returns the element-wise diagonal derivative tensor)
-   *   - TensorConstant<T>        : real constant leaf
-   *   - TensorComplexVariable<T> : complex variable leaf
-   *   - TensorComplexConstant<T> : complex constant leaf
+   *   - TensorComplex<T>       : complex value leaf
    */
-  template<typename T> using IvyVariableTensorPtr_t        = IvyTensorPtr_t< IvyTensorVariableCell<T> >;
-  template<typename T> using IvyConstantTensorPtr_t        = IvyTensorPtr_t< IvyTensorConstantCell<T> >;
-  template<typename T> using IvyComplexVariableTensorPtr_t = IvyTensorPtr_t< IvyTensorComplexVariableCell<T> >;
-  template<typename T> using IvyComplexConstantTensorPtr_t = IvyTensorPtr_t< IvyTensorComplexConstantCell<T> >;
-  template<typename T, typename... Args> __HOST__ IvyVariableTensorPtr_t<T> TensorVariable(Args&&... args){
-    return Tensor< IvyTensorVariableCell<T> >(std_util::forward<Args>(args)...);
+  template<typename T> using IvyScalarTensorPtr_t  = IvyTensorPtr_t< IvyTensorScalarCell<T> >;
+  template<typename T> using IvyComplexTensorPtr_t = IvyTensorPtr_t< IvyTensorComplexCell<T> >;
+  template<typename T, typename... Args> __HOST__ IvyScalarTensorPtr_t<T> TensorScalar(Args&&... args){
+    return Tensor< IvyTensorScalarCell<T> >(std_util::forward<Args>(args)...);
   }
-  template<typename T, typename... Args> __HOST__ IvyConstantTensorPtr_t<T> TensorConstant(Args&&... args){
-    return Tensor< IvyTensorConstantCell<T> >(std_util::forward<Args>(args)...);
-  }
-  template<typename T, typename... Args> __HOST__ IvyComplexVariableTensorPtr_t<T> TensorComplexVariable(Args&&... args){
-    return Tensor< IvyTensorComplexVariableCell<T> >(std_util::forward<Args>(args)...);
-  }
-  template<typename T, typename... Args> __HOST__ IvyComplexConstantTensorPtr_t<T> TensorComplexConstant(Args&&... args){
-    return Tensor< IvyTensorComplexConstantCell<T> >(std_util::forward<Args>(args)...);
+  template<typename T, typename... Args> __HOST__ IvyComplexTensorPtr_t<T> TensorComplex(Args&&... args){
+    return Tensor< IvyTensorComplexCell<T> >(std_util::forward<Args>(args)...);
   }
 }
 namespace std_ivy{

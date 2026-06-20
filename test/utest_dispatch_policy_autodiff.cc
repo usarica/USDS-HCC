@@ -15,7 +15,7 @@ using namespace std_ivy;
 using namespace IvyMath;
 
 namespace{
-  double value_of(IvyVariablePtr_t<double> const& v){ return v->value(); }
+  double value_of(IvyScalarPtr_t<double> const& v){ return v->value(); }
   template<typename T> double scalar_of(T const& v){ return unpack_function_input_reduced<T>::get(v); }
 
   void check_close(double got, double ref, double tol, char const* label){
@@ -42,14 +42,14 @@ void utest(){
   IvyGPUStream* stream = IvyStreamUtils::make_global_gpu_stream();
 
   // Scalar variable path.
-  auto x = Variable<double>(IvyMemoryType::Host, stream, 1.0);
+  auto x = Scalar<double>(IvyMemoryType::Host, stream, 1.0);
   auto f = Sin(Exp(x));
   auto df_dx = f->gradient(x);
   check_close(scalar_of(df_dx->value()), std::cos(std::exp(1.0))*std::exp(1.0), tol, "d/dx sin(exp(x))");
 
   // Tensor path (shared variable pointer over all elements).
   IvyTensorShape shape({ 2, 2 });
-  auto t = Tensor<IvyVariablePtr_t<double>>(IvyMemoryType::Host, stream, shape, x);
+  auto t = Tensor<IvyScalarPtr_t<double>>(IvyMemoryType::Host, stream, shape, x);
   auto texp = Exp(t);
   auto dtexp_dx = texp->gradient(x);
   auto const& gv = dtexp_dx->value();
@@ -68,7 +68,7 @@ void utest(){
   check_close(scalar_of(dh_dx->value()), std::cos(std::exp(1.0))*std::exp(1.0), tol, "chain gradient via variable target");
 
   // Edge case: same expression at x = 0 should remain stable and finite.
-  auto x0 = Variable<double>(IvyMemoryType::Host, stream, 0.0);
+  auto x0 = Scalar<double>(IvyMemoryType::Host, stream, 0.0);
   auto f0 = Sin(Exp(x0));
   auto df0_dx0 = f0->gradient(x0);
   check_close(scalar_of(df0_dx0->value()), std::cos(1.0), tol, "d/dx sin(exp(x)) at x=0");

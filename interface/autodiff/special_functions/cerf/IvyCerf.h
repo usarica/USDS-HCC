@@ -9,14 +9,14 @@ namespace faddeeva_impl{
   using namespace IvyMath;
 
   template<typename T> __HOST_DEVICE__ void cexp(T& re, T& im){
-    IvyComplexVariable<T> val(re, im);
+    IvyComplex<T> val(re, im);
     val = IvyMath::Exp(val);
     re = val.Re();
     im = val.Im();
   }
 
   using faddeeva_impl_size_t = unsigned short;
-  template <typename T, faddeeva_impl_size_t N, faddeeva_impl_size_t NTAYLOR> __HOST_DEVICE__ IvyComplexVariable<T> faddeeva_smabmq_impl(
+  template <typename T, faddeeva_impl_size_t N, faddeeva_impl_size_t NTAYLOR> __HOST_DEVICE__ IvyComplex<T> faddeeva_smabmq_impl(
     T zre, T zim, T const& tm,
     const T(&a)[N], const T* npi,
     const T(&taylorarr)[N * NTAYLOR * 2]
@@ -57,8 +57,8 @@ namespace faddeeva_impl{
             sumim = im + coeffs[2 * i + 1];
           }
           // undo the flip in real part of z if needed
-          if (negrez) return IvyComplexVariable<T>(sumre, -sumim);
-          else return IvyComplexVariable<T>(sumre, sumim);
+          if (negrez) return IvyComplex<T>(sumre, -sumim);
+          else return IvyComplex<T>(sumre, sumim);
         }
       }
     }
@@ -155,12 +155,12 @@ namespace faddeeva_impl{
       T ez2re = z2re, ez2im = z2im;
       faddeeva_impl::cexp(ez2re, ez2im);
       const T twoez2norm = Two<T>() / (ez2re * ez2re + ez2im * ez2im);
-      return IvyComplexVariable<T>(
+      return IvyComplex<T>(
         twoez2norm * ez2re + sumim / twosqrtpi,
         -twoez2norm * ez2im - sumre / twosqrtpi
         );
     }
-    else return IvyComplexVariable<T>(-sumim / twosqrtpi, sumre / twosqrtpi);
+    else return IvyComplex<T>(-sumim / twosqrtpi, sumre / twosqrtpi);
   }
 
   template<typename T, faddeeva_impl_size_t N> struct npicomp{
@@ -175,7 +175,7 @@ namespace faddeeva_impl{
 namespace IvyCerf{
   using namespace IvyMath;
 
-  template<typename T> __HOST_DEVICE__ IvyComplexVariable<T> faddeeva(IvyComplexVariable<T> const& z){
+  template<typename T> __HOST_DEVICE__ IvyComplex<T> faddeeva(IvyComplex<T> const& z){
     constexpr faddeeva_impl::npicomp<T, 24> npicomp24;
     auto npi24 = npicomp24.get();
     constexpr T a24[24] ={ // precomputed Fourier coefficient prefactors
@@ -365,7 +365,7 @@ namespace IvyCerf{
       );
   }
 
-  template<typename T> __HOST_DEVICE__ IvyComplexVariable<T> faddeeva_fast(IvyComplexVariable<T> const& z){
+  template<typename T> __HOST_DEVICE__ IvyComplex<T> faddeeva_fast(IvyComplex<T> const& z){
     constexpr faddeeva_impl::npicomp<T, 11> npicomp11;
     auto npi11 = npicomp11.get();
     constexpr T a11[11]={ // precomputed Fourier coefficient prefactors
@@ -427,53 +427,53 @@ namespace IvyCerf{
       );
   }
 
-  template<typename T> __HOST_DEVICE__ IvyComplexVariable<T> erfc(IvyComplexVariable<T> const& z){
+  template<typename T> __HOST_DEVICE__ IvyComplex<T> erfc(IvyComplex<T> const& z){
     auto const zRe = z.Re();
     auto const zIm = z.Im();
     auto exp_mz2 = Exp(-Pow(z, 2));
-    IvyComplexVariable<T> res = (zRe >= Zero<T>())
+    IvyComplex<T> res = (zRe >= Zero<T>())
       ?
-      (exp_mz2 * faddeeva(IvyComplexVariable<T>(-zIm, zRe)))
+      (exp_mz2 * faddeeva(IvyComplex<T>(-zIm, zRe)))
       :
-      (Two<T>() - exp_mz2 * faddeeva(IvyComplexVariable<T>(zIm, -zRe)));
+      (Two<T>() - exp_mz2 * faddeeva(IvyComplex<T>(zIm, -zRe)));
     if (zRe == Zero<T>()) res.set_real(1);
     return res;
   }
 
-  template<typename T> __HOST_DEVICE__ IvyComplexVariable<T> erfc_fast(IvyComplexVariable<T> const& z){
+  template<typename T> __HOST_DEVICE__ IvyComplex<T> erfc_fast(IvyComplex<T> const& z){
     auto const zRe = z.Re();
     auto const zIm = z.Im();
     auto exp_mz2 = Exp(-Pow(z, 2));
-    IvyComplexVariable<T> res = (zRe >= Zero<T>())
+    IvyComplex<T> res = (zRe >= Zero<T>())
       ?
-      (exp_mz2 * faddeeva_fast(IvyComplexVariable<T>(-zIm, zRe)))
+      (exp_mz2 * faddeeva_fast(IvyComplex<T>(-zIm, zRe)))
       :
-      (Two<T>() - exp_mz2 * faddeeva_fast(IvyComplexVariable<T>(zIm, -zRe)));
+      (Two<T>() - exp_mz2 * faddeeva_fast(IvyComplex<T>(zIm, -zRe)));
     if (zRe == Zero<T>()) res.set_real(1);
     return res;
   }
 
-  template<typename T> __HOST_DEVICE__ IvyComplexVariable<T> erf(IvyComplexVariable<T> const& z){
+  template<typename T> __HOST_DEVICE__ IvyComplex<T> erf(IvyComplex<T> const& z){
     auto const zRe = z.Re();
     auto const zIm = z.Im();
     auto exp_mz2 = Exp(-Pow(z, 2));
-    IvyComplexVariable<T> res = (zRe >= Zero<T>()) ?
-      (One<T>() - exp_mz2 * faddeeva(IvyComplexVariable<T>(-zIm, zRe)))
+    IvyComplex<T> res = (zRe >= Zero<T>()) ?
+      (One<T>() - exp_mz2 * faddeeva(IvyComplex<T>(-zIm, zRe)))
       :
-      (exp_mz2 * faddeeva(IvyComplexVariable<T>(zIm, -zRe)) - One<T>());
+      (exp_mz2 * faddeeva(IvyComplex<T>(zIm, -zRe)) - One<T>());
     if (zRe == Zero<T>()) res.set_real(0);
     return res;
   }
 
-  template<typename T> __HOST_DEVICE__ IvyComplexVariable<T> erf_fast(IvyComplexVariable<T> const& z){
+  template<typename T> __HOST_DEVICE__ IvyComplex<T> erf_fast(IvyComplex<T> const& z){
     auto const zRe = z.Re();
     auto const zIm = z.Im();
     auto exp_mz2 = Exp(-Pow(z, 2));
-    IvyComplexVariable<T> res = (zRe >= Zero<T>())
+    IvyComplex<T> res = (zRe >= Zero<T>())
       ?
-      (One<T>() - exp_mz2 * faddeeva_fast(IvyComplexVariable<T>(-zIm, zRe)))
+      (One<T>() - exp_mz2 * faddeeva_fast(IvyComplex<T>(-zIm, zRe)))
       :
-      (exp_mz2 * faddeeva_fast(IvyComplexVariable<T>(zIm, -zRe)) - One<T>());
+      (exp_mz2 * faddeeva_fast(IvyComplex<T>(zIm, -zRe)) - One<T>());
     if (zRe == Zero<T>()) res.set_real(0);
     return res;
   }

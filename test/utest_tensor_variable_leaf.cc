@@ -3,7 +3,7 @@
  * @brief Unit tests for the contiguous differentiable tensor variable leaf.
  *
  * Exercises the struct-of-arrays differentiable tensor introduced as
- * @c IvyTensor<IvyTensorVariableCell<T>> (created via @c TensorVariable<T>):
+ * @c IvyTensor<IvyTensorScalarCell<T>> (created via @c TensorScalar<T>):
  *  - The cell element is exactly @c sizeof(T) (no per-element client manager).
  *  - The tensor is a first-class differentiation target (a "variable tensor").
  *  - Unary element-wise ops (Exp, Log, Sin, Cos, Negate, Sqrt) evaluate and
@@ -16,7 +16,7 @@
  * This replaces the parallel SoA prototype: there is a single op-definition
  * location (IvyMathBaseArithmetic, namespace IvyMath) and the contiguous leaf
  * plugs into it directly. Also covers the full cell family
- * (IvyTensorRealCell / IvyTensorComplexCell over variable/constant value tags)
+ * (IvyTensorScalarCell / IvyTensorComplexCell value-leaf cells)
  * so a contiguous tensor leaf exists for every domain x value combination.
  */
 
@@ -49,16 +49,16 @@ void utest(){
   __PRINT_INFO__("=== utest_tensor_variable_leaf ===\n");
 
   // The cell is a bare value: contiguous storage, no per-element bookkeeping.
-  check(sizeof(IvyTensorVariableCell<double>) == sizeof(double), "sizeof(cell) == sizeof(double)");
+  check(sizeof(IvyTensorScalarCell<double>) == sizeof(double), "sizeof(cell) == sizeof(double)");
 
   constexpr double x0 = 0.7;
   IvyTensorShape shape({ 2, 3 });
-  auto t = TensorVariable<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorVariableCell<double>(x0));
+  auto t = TensorScalar<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorScalarCell<double>(x0));
   check(t->num_elements() == 6, "tensor has 6 elements");
   check(is_differentiable(*t), "variable tensor is differentiable");
 
   // Helper: check every element of a gradient/value tensor equals expected.
-  // Op results keep the cell element type (IvyTensorVariableCell), so read
+  // Op results keep the cell element type (IvyTensorScalarCell), so read
   // each element via value().
   auto all_close = [](auto const& tens, double expected, double tol = 1e-9){
     for (IvyTensorDim_t i = 0; i < tens.num_elements(); ++i)
@@ -110,51 +110,39 @@ void utest(){
 
   // --- Differentiation w.r.t. an unrelated tensor is zero ---
   {
-    auto s = TensorVariable<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorVariableCell<double>(1.0));
+    auto s = TensorScalar<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorScalarCell<double>(1.0));
     auto f = Exp(t);
     auto g = f->gradient(s);
     check(all_close(g->value(), 0.0), "dExp(t)/ds == 0 for unrelated s");
   }
 
-  // --- Cell family: domain (real/complex) x value (variable/constant) ---
+  // --- Cell family: domain (real/complex), single value-leaf operability ---
   {
     // Sizes: contiguous, payload-only.
-    check(sizeof(IvyTensorVariableCell<double>) == sizeof(double), "sizeof(real var cell) == 8");
-    check(sizeof(IvyTensorConstantCell<double>) == sizeof(double), "sizeof(real const cell) == 8");
-    check(sizeof(IvyTensorComplexVariableCell<double>) == 2*sizeof(double), "sizeof(complex var cell) == 16");
-    check(sizeof(IvyTensorComplexConstantCell<double>) == 2*sizeof(double), "sizeof(complex const cell) == 16");
+    check(sizeof(IvyTensorScalarCell<double>) == sizeof(double), "sizeof(real cell) == 8");
+    check(sizeof(IvyTensorComplexCell<double>) == 2*sizeof(double), "sizeof(complex cell) == 16");
 
-    // Domain / value tags drive the operability machinery.
-    check(is_real_v<IvyTensorVariableCell<double>> && is_variable_v<IvyTensorVariableCell<double>>, "real var cell: real + variable tags");
-    check(is_real_v<IvyTensorConstantCell<double>> && is_constant_v<IvyTensorConstantCell<double>>, "real const cell: real + constant tags");
-    check(is_complex_v<IvyTensorComplexVariableCell<double>> && is_variable_v<IvyTensorComplexVariableCell<double>>, "complex var cell: complex + variable tags");
-    check(is_complex_v<IvyTensorComplexConstantCell<double>> && is_constant_v<IvyTensorComplexConstantCell<double>>, "complex const cell: complex + constant tags");
+    // Domain tags drive the operability machinery; both cells are value leaves.
+    check(is_real_v<IvyTensorScalarCell<double>> && is_leaf_v<IvyTensorScalarCell<double>>, "real cell: real + leaf tags");
+    check(is_complex_v<IvyTensorComplexCell<double>> && is_leaf_v<IvyTensorComplexCell<double>>, "complex cell: complex + leaf tags");
 
-    // is_differentiable: only the real variable cell seeds gradients.
-    check(is_differentiable(IvyTensorVariableCell<double>(1.0)), "real var cell is differentiable");
-    check(!is_differentiable(IvyTensorConstantCell<double>(1.0)), "real const cell is NOT differentiable");
-  }
-
-  // --- Real constant tensor: evaluates through the ops but is not differentiable ---
-  {
-    auto tc = TensorConstant<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorConstantCell<double>(x0));
-    check(!is_differentiable(*tc), "constant tensor is NOT differentiable");
-    auto f = Exp(tc);
-    check(all_close(f->value(), std::exp(x0)), "Exp(constant tensor) value == exp(x0)");
+    // is_differentiable: the real cell seeds gradients; the complex cell does not.
+    check(is_differentiable(IvyTensorScalarCell<double>(1.0)), "real cell is differentiable");
+    check(!is_differentiable(IvyTensorComplexCell<double>(1.0)), "complex cell is NOT a differentiation seed");
   }
 
   // --- Complex cells: value access, conjugation, contiguous tensor construction ---
   {
-    IvyTensorComplexVariableCell<double> z(3.0, 4.0);
+    IvyTensorComplexCell<double> z(3.0, 4.0);
     check(close(z.Re(), 3.0) && close(z.Im(), 4.0), "complex cell Re/Im");
     check(close(z.norm(), 5.0), "complex cell norm == 5");
-    check(is_conjugatable<IvyTensorComplexVariableCell<double>>, "complex cell is conjugatable");
+    check(is_conjugatable<IvyTensorComplexCell<double>>, "complex cell is conjugatable");
     conjugate(z);
     check(close(z.Im(), -4.0), "conjugate negates Im");
 
-    auto zt = TensorComplexVariable<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorComplexVariableCell<double>(1.0, 2.0));
-    check(zt->num_elements() == 6, "complex variable tensor has 6 elements");
-    check(close((*zt)[0].Re(), 1.0) && close((*zt)[0].Im(), 2.0), "complex variable tensor element Re/Im");
+    auto zt = TensorComplex<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorComplexCell<double>(1.0, 2.0));
+    check(zt->num_elements() == 6, "complex tensor has 6 elements");
+    check(close((*zt)[0].Re(), 1.0) && close((*zt)[0].Im(), 2.0), "complex tensor element Re/Im");
   }
 
   __PRINT_INFO__("=== ALL utest_tensor_variable_leaf tests PASSED ===\n");

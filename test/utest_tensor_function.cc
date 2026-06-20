@@ -3,7 +3,7 @@
  * @brief Unit tests for tensor-domain autodiff: element-wise functions and gradients.
  *
  * Exercises:
- *  - Construction of IvyTensor<IvyVariablePtr_t<double>> from a scalar variable.
+ *  - Construction of IvyTensor<IvyScalarPtr_t<double>> from a scalar variable.
  *  - Applying Exp, Log, Sin, Cos to a tensor pointer (IvyTensorPtr_t).
  *  - Evaluating the resulting tensor functions (value()).
  *  - Computing gradients via gradient() and checking the output tensor shape and values.
@@ -13,7 +13,7 @@
 
 #include "common_test_defs.h"
 
-// Include IvyMathBaseArithmetic.h first so that IvyComplexVariable.h (and thus
+// Include IvyMathBaseArithmetic.h first so that IvyComplex.h (and thus
 // convert_to_complex_type's primary template) is defined before IvyTensor.h
 // adds its partial specialisation of convert_to_complex_type.
 #include "autodiff/arithmetic/IvyMathBaseArithmetic.h"
@@ -37,8 +37,8 @@ static void check(bool cond, char const* label){
   }
 }
 
-/** @brief Return the scalar value stored by an IvyVariablePtr_t<double>. */
-static double var_val(IvyMath::IvyVariablePtr_t<double> const& p){
+/** @brief Return the scalar value stored by an IvyScalarPtr_t<double>. */
+static double var_val(IvyMath::IvyScalarPtr_t<double> const& p){
   return p->value();
 }
 
@@ -51,10 +51,10 @@ void utest(){
   //--------------------------------------------------------------------------
   // 1. Construct a scalar variable and a tensor filled with pointers to it.
   //--------------------------------------------------------------------------
-  auto x = Variable<double>(IvyMemoryType::Host, nullptr, 3.0);
+  auto x = Scalar<double>(IvyMemoryType::Host, nullptr, 3.0);
   IvyTensorShape shape({ 2, 3 });
 
-  auto t = Tensor<IvyVariablePtr_t<double>>(
+  auto t = Tensor<IvyScalarPtr_t<double>>(
     shape.get_memory_type(), shape.gpu_stream(), shape, x
   );
   check(t->num_elements() == 6, "Tensor has 6 elements");
@@ -104,7 +104,7 @@ void utest(){
   // 5. function_gradient for the tensor: ∂t[i]/∂x == 1 for all i.
   //--------------------------------------------------------------------------
   {
-    using tensor_t = IvyTensor<IvyVariablePtr_t<double>>;
+    using tensor_t = IvyTensor<IvyScalarPtr_t<double>>;
     IvyThreadSafePtr_t<IvyBaseNode> base_x(x);
     auto grad_t_ptr = function_gradient<tensor_t>::get(*t, base_x);
     check(grad_t_ptr != nullptr, "function_gradient<tensor> != nullptr");

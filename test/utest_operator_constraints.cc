@@ -64,8 +64,8 @@ static void test_foreign_types_not_hijacked(){
 static void test_ivy_operators_still_work(){
   __PRINT_INFO__("--- Ivy-domain operators still build the graph ---\n");
 
-  auto x = Variable<double>(IvyMemoryType::Host, nullptr, 2.0);
-  auto y = Variable<double>(IvyMemoryType::Host, nullptr, 3.0);
+  auto x = Scalar<double>(IvyMemoryType::Host, nullptr, 2.0);
+  auto y = Scalar<double>(IvyMemoryType::Host, nullptr, 3.0);
 
   auto f = Add(x, Multiply(x, y));   // f = x + x*y
   check(close(f->value().value(), 8.0), "x + x*y == 8");

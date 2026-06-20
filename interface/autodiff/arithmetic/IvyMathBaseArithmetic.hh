@@ -2,9 +2,8 @@
 #define IVYMATHBASEARITHMETIC_HH
 
 
-#include "autodiff/basic_nodes/IvyConstant.h"
-#include "autodiff/basic_nodes/IvyVariable.h"
-#include "autodiff/basic_nodes/IvyComplexVariable.h"
+#include "autodiff/basic_nodes/IvyScalar.h"
+#include "autodiff/basic_nodes/IvyComplex.h"
 #include "autodiff/arithmetic/IvyMathConstOps.h"
 #include "autodiff/arithmetic/IvyMathFunctionPrimitives.h"
 #include "config/IvyAnnotationDispatchPolicy.h"
@@ -86,7 +85,7 @@ namespace IvyMath{
     using value_t = unpacked_reduced_value_t<T>;
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyConstantPtr_t<fndtype_t>;
+    using grad_t = IvyScalarPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x);
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
@@ -95,7 +94,7 @@ namespace IvyMath{
     using value_t = unpacked_reduced_value_t<T>;
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyComplexVariablePtr_t<fndtype_t>;
+    using grad_t = IvyComplexPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x);
     template<typename X_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(IvyThreadSafePtr_t<X_t> const& x);
@@ -182,7 +181,7 @@ namespace IvyMath{
   };
   template<typename T> struct SqrtFcnal<T, real_domain_tag>{
     using dtype_t = reduced_data_t<unpacked_reduced_value_t<T>>;
-    using value_t = IvyVariable<dtype_t>;
+    using value_t = IvyScalar<dtype_t>;
     using fndtype_t = fundamental_data_t<value_t>;
     using grad_t = IvyThreadSafePtr_t<IvyFunction<value_t, real_domain_tag>>;
     static __HOST_DEVICE__ value_t eval(T const& x);
@@ -191,7 +190,7 @@ namespace IvyMath{
   };
   template<typename T> struct SqrtFcnal<T, complex_domain_tag>{
     using dtype_t = reduced_data_t<unpacked_reduced_value_t<T>>;
-    using value_t = IvyComplexVariable<dtype_t>;
+    using value_t = IvyComplex<dtype_t>;
     using fndtype_t = fundamental_data_t<value_t>;
     using grad_t = IvyThreadSafePtr_t<IvyFunction<value_t, complex_domain_tag>>;
     static __HOST_DEVICE__ value_t eval(T const& x);
@@ -925,7 +924,7 @@ namespace IvyMath{
     using value_t = more_precise_reduced_t<T, U>;
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyConstantPtr_t<fndtype_t>;
+    using grad_t = IvyScalarPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
@@ -934,7 +933,7 @@ namespace IvyMath{
     using value_t = more_precise_reduced_t<T, U>;
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyComplexVariablePtr_t<fndtype_t>;
+    using grad_t = IvyComplexPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
@@ -967,7 +966,7 @@ namespace IvyMath{
     using value_t = more_precise_reduced_t<T, U>;
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyComplexVariablePtr_t<fndtype_t>;
+    using grad_t = IvyComplexPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
@@ -976,7 +975,7 @@ namespace IvyMath{
     using value_t = more_precise_reduced_t<T, U>;
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyComplexVariablePtr_t<fndtype_t>;
+    using grad_t = IvyComplexPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
@@ -1008,7 +1007,7 @@ namespace IvyMath{
     using value_t = more_precise_reduced_t<T, U>;
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyConstantPtr_t<fndtype_t>;
+    using grad_t = IvyScalarPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
@@ -1017,7 +1016,7 @@ namespace IvyMath{
     using value_t = more_precise_reduced_t<T, U>;
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyComplexVariablePtr_t<fndtype_t>;
+    using grad_t = IvyComplexPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
@@ -1050,7 +1049,7 @@ namespace IvyMath{
     using value_t = more_precise_reduced_t<T, U>;
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyComplexVariablePtr_t<fndtype_t>;
+    using grad_t = IvyComplexPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
@@ -1059,7 +1058,7 @@ namespace IvyMath{
     using value_t = more_precise_reduced_t<T, U>;
     using dtype_t = reduced_data_t<value_t>;
     using fndtype_t = fundamental_data_t<value_t>;
-    using grad_t = IvyComplexVariablePtr_t<fndtype_t>;
+    using grad_t = IvyComplexPtr_t<fndtype_t>;
     static __HOST_DEVICE__ value_t eval(T const& x, U const& y);
     template<typename X_t, typename Y_t>
     static __INLINE_FCN_FORCE__ IVY_MATH_GRAPH_QUALIFIER grad_t gradient(unsigned char ivar, IvyThreadSafePtr_t<X_t> const& x, IvyThreadSafePtr_t<Y_t> const& y);
