@@ -27,17 +27,17 @@ static int g_live = 0;   //!< Number of live Tracked instances.
 struct Tracked{
   int v;
   __HOST_DEVICE__ Tracked() : v(0){
-#ifndef __CUDA_ARCH__
+#ifndef __CUDA_DEVICE_CODE__
     ++g_live;
 #endif
   }
   __HOST_DEVICE__ Tracked(int x) : v(x){
-#ifndef __CUDA_ARCH__
+#ifndef __CUDA_DEVICE_CODE__
     ++g_live;
 #endif
   }
   __HOST_DEVICE__ ~Tracked(){
-#ifndef __CUDA_ARCH__
+#ifndef __CUDA_DEVICE_CODE__
     --g_live;
 #endif
   }

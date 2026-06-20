@@ -414,10 +414,20 @@ namespace IvyMath{
 namespace std_ivy{
   template<typename... Args>
   struct value_printout<IvyMath::IvyFunction<Args...>>{
+    // Signature stays __HOST_DEVICE__ to match the primary value_printout template (so the
+    // __HOST_DEVICE__ print_value call-site does not warn). IvyFunction::value() is __HOST__-only
+    // because function graph nodes use virtual dispatch/RAII and never exist on the device, so the
+    // body is wrapped in #ifndef __CUDA_DEVICE_CODE__; NVCC therefore never compiles the
+    // __HOST__->device call and warning #20011-D disappears without any suppression flag. The #else
+    // branch is a compile-time-dead unreachable stub for device translation units only.
     static __HOST_DEVICE__ void print(IvyMath::IvyFunction<Args...> const& var){
+#ifndef __CUDA_DEVICE_CODE__
       __PRINT_INFO__("Function(");
       print_value(var.value(), false);
       __PRINT_INFO__(")");
+#else
+      (void) var; // unreachable: IvyFunction objects cannot exist on the device
+#endif
     }
   };
 }
@@ -450,7 +460,7 @@ namespace IvyMemoryHelpers{
      *
      * Signature is @c __HOST_DEVICE__ to match the primary template and avoid NVCC
      * warning #20011-D at the call-site (the free @c construct() wrapper is
-     * @c __HOST_DEVICE__).  The body is wrapped in @c \#ifndef @c __CUDA_ARCH__ so
+     * @c __HOST_DEVICE__).  The body is wrapped in @c \#ifndef @c __CUDA_DEVICE_CODE__ so
      * that the @c __HOST__-only placement-new is never compiled into device code —
      * NVCC therefore does not see any @c __HOST__→device call, and the warning
      * disappears without any diagnostic-suppression flag.
@@ -466,7 +476,7 @@ namespace IvyMemoryHelpers{
       IvyGPUStream& /*stream*/,
       Args&&... args
     ){
-#ifndef __CUDA_ARCH__
+#ifndef __CUDA_DEVICE_CODE__
       if (!data) return false;
       if (n==0) return true;
       for (IvyTypes::size_t i=0; i<n; ++i)

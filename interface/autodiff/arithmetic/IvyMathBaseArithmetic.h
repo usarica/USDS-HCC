@@ -2099,7 +2099,14 @@ namespace IvyMath{
     add_fcn_to_clients(res, y);
     return res;
   }
-  template<typename T, typename U> __HOST_DEVICE__ auto XOr(T const& x, U const& y) -> decltype(Xor(x, y)){ return Xor(x, y); }
+  // XOr is split into two overloads mirroring Xor itself: a __HOST_DEVICE__ direct-evaluation
+  // overload for non-pointer operands, and a __HOST__-only overload for pointer operands (which
+  // builds a host-only function-graph node). A single __HOST_DEVICE__ wrapper would force NVCC to
+  // compile the __HOST__-only graph builder in device context (warning #20011-D).
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U>)>
+  __HOST_DEVICE__ auto XOr(T const& x, U const& y) -> decltype(Xor(x, y)){ return Xor(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(is_pointer_v<T> && is_pointer_v<U>)>
+  __HOST__ auto XOr(T const& x, U const& y) -> decltype(Xor(x, y)){ return Xor(x, y); }
 
   // AND
   template<typename T, typename U, typename domain_T, typename domain_U>
@@ -2184,7 +2191,10 @@ namespace IvyMath{
     add_fcn_to_clients(res, y);
     return res;
   }
-  template<typename T, typename U> __HOST_DEVICE__ auto GT(T const& x, U const& y) -> decltype(GreaterThan(x, y)){ return GreaterThan(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U>)>
+  __HOST_DEVICE__ auto GT(T const& x, U const& y) -> decltype(GreaterThan(x, y)){ return GreaterThan(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(is_pointer_v<T> && is_pointer_v<U>)>
+  __HOST__ auto GT(T const& x, U const& y) -> decltype(GreaterThan(x, y)){ return GreaterThan(x, y); }
 
   // LESS THAN
   template<typename T, typename U, typename domain_T, typename domain_U>
@@ -2237,7 +2247,10 @@ namespace IvyMath{
     add_fcn_to_clients(res, y);
     return res;
   }
-  template<typename T, typename U> __HOST_DEVICE__ auto LT(T const& x, U const& y) -> decltype(LessThan(x, y)){ return LessThan(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U>)>
+  __HOST_DEVICE__ auto LT(T const& x, U const& y) -> decltype(LessThan(x, y)){ return LessThan(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(is_pointer_v<T> && is_pointer_v<U>)>
+  __HOST__ auto LT(T const& x, U const& y) -> decltype(LessThan(x, y)){ return LessThan(x, y); }
 
   // GREATER THAN OR EQUAL TO
   template<typename T, typename U, typename domain_T, typename domain_U>
@@ -2290,8 +2303,14 @@ namespace IvyMath{
     add_fcn_to_clients(res, y);
     return res;
   }
-  template<typename T, typename U> __HOST_DEVICE__ auto GE(T const& x, U const& y) -> decltype(GreaterOrEqual(x, y)){ return GreaterOrEqual(x, y); }
-  template<typename T, typename U> __HOST_DEVICE__ auto GEQ(T const& x, U const& y) -> decltype(GreaterOrEqual(x, y)){ return GreaterOrEqual(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U>)>
+  __HOST_DEVICE__ auto GE(T const& x, U const& y) -> decltype(GreaterOrEqual(x, y)){ return GreaterOrEqual(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(is_pointer_v<T> && is_pointer_v<U>)>
+  __HOST__ auto GE(T const& x, U const& y) -> decltype(GreaterOrEqual(x, y)){ return GreaterOrEqual(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U>)>
+  __HOST_DEVICE__ auto GEQ(T const& x, U const& y) -> decltype(GreaterOrEqual(x, y)){ return GreaterOrEqual(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(is_pointer_v<T> && is_pointer_v<U>)>
+  __HOST__ auto GEQ(T const& x, U const& y) -> decltype(GreaterOrEqual(x, y)){ return GreaterOrEqual(x, y); }
 
   // LESS THAN OR EQUAL TO
   template<typename T, typename U, typename domain_T, typename domain_U>
@@ -2344,8 +2363,14 @@ namespace IvyMath{
     add_fcn_to_clients(res, y);
     return res;
   }
-  template<typename T, typename U> __HOST_DEVICE__ auto LE(T const& x, U const& y) -> decltype(LessOrEqual(x, y)){ return LessOrEqual(x, y); }
-  template<typename T, typename U> __HOST_DEVICE__ auto LEQ(T const& x, U const& y) -> decltype(LessOrEqual(x, y)){ return LessOrEqual(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U>)>
+  __HOST_DEVICE__ auto LE(T const& x, U const& y) -> decltype(LessOrEqual(x, y)){ return LessOrEqual(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(is_pointer_v<T> && is_pointer_v<U>)>
+  __HOST__ auto LE(T const& x, U const& y) -> decltype(LessOrEqual(x, y)){ return LessOrEqual(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(!is_pointer_v<T> && !is_pointer_v<U>)>
+  __HOST_DEVICE__ auto LEQ(T const& x, U const& y) -> decltype(LessOrEqual(x, y)){ return LessOrEqual(x, y); }
+  template<typename T, typename U, ENABLE_IF_BOOL_IMPL(is_pointer_v<T> && is_pointer_v<U>)>
+  __HOST__ auto LEQ(T const& x, U const& y) -> decltype(LessOrEqual(x, y)){ return LessOrEqual(x, y); }
 
 }
 
