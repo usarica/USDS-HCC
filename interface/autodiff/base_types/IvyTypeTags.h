@@ -59,6 +59,25 @@ namespace IvyMath{
   template<typename T> inline constexpr bool is_commutative_v = division_algebra_traits<get_domain_t<T>>::is_commutative;
   template<typename T> inline constexpr bool is_associative_v = division_algebra_traits<get_domain_t<T>>::is_associative;
 
+  // Representation (chart) axis.
+  // A division-algebra value can be parametrized by different charts (e.g. a
+  // complex number as Cartesian (x+iy) or Polar (r·e^{iφ}); a quaternion by its
+  // components, an axis-angle pair, or the exponential/Lie tangent). The chart
+  // fixes the local differentiation basis through its Jacobian d(canonical)/d(DOF).
+  // Charts are compile-time policy types carried as a template parameter of the
+  // leaf (e.g. IvyComplex<T, Chart>). Function OUTPUTS are always canonical, so a
+  // chart only ever appears at a user leaf and enters at the gradient seed.
+  struct canonical_chart_tag{};      // identity chart (the algebra's component basis)
+  struct singleton_chart_tag{};      // the only chart of a 1-DOF / trivial domain (R, tensor)
+  // get_representation_t<T>: the chart policy of a leaf type. Defaults to the
+  // singleton chart for domains that have no representational freedom. Leaf types
+  // that expose a chart declare a nested `representation_t` typedef.
+  template<typename T, typename = void> struct get_representation{ using type = singleton_chart_tag; };
+  template<typename T> struct get_representation<T, std_ttraits::void_t<typename T::representation_t>>{ using type = typename T::representation_t; };
+  template<typename T> struct get_representation<T*>{ using type = typename get_representation<T>::type; };
+  template<typename T> struct get_representation<IvyThreadSafePtr_t<T>>{ using type = typename get_representation<T>::type; };
+  template<typename T> using get_representation_t = typename get_representation<T>::type;
+
   // True when T (after unwrapping pointers/IvyThreadSafePtr) carries an Ivy math domain
   // (real, complex, quaternion, or tensor) — i.e. it is an Ivy node type, not a bare
   // arithmetic value or an unrelated foreign type. Used to constrain the global operators
