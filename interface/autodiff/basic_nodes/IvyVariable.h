@@ -33,22 +33,19 @@ namespace IvyMath{
 
   protected:
     value_t value_;
-    value_t infinitesimal_;
 
   public:
     // Empty default constructor
-    __HOST_DEVICE__ IvyVariable() : clientmgr_t(), value_(0), infinitesimal_(0){}
-    template<typename U, ENABLE_IF_ARITHMETIC(U)> __HOST_DEVICE__ IvyVariable(U const& value) : clientmgr_t(), value_(__STATIC_CAST__(T, value)), infinitesimal_(0){}
-    __HOST_DEVICE__ IvyVariable(T const& value) : clientmgr_t(), value_(value), infinitesimal_(0){}
-    __HOST_DEVICE__ IvyVariable(T&& value) : clientmgr_t(), value_(std_util::move(value)), infinitesimal_(0){}
-    __HOST_DEVICE__ IvyVariable(T const& value, T const& infinitesimal) : clientmgr_t(), value_(value), infinitesimal_(infinitesimal){}
-    __HOST_DEVICE__ IvyVariable(T&& value, T&& infinitesimal) : clientmgr_t(), value_(std_util::move(value)), infinitesimal_(std_util::move(infinitesimal)){}
-    template<typename U> __HOST_DEVICE__ IvyVariable(IvyVariable<U> const& other) : clientmgr_t(), value_(__STATIC_CAST__(T, other.value())), infinitesimal_(0){}
-    __HOST_DEVICE__ IvyVariable(IvyVariable<T> const& other) : clientmgr_t(), value_(other.value_), infinitesimal_(other.infinitesimal_){}
-    __HOST_DEVICE__ IvyVariable(IvyVariable<T>&& other) : clientmgr_t(), value_(std_util::move(other.value_)), infinitesimal_(std_util::move(other.infinitesimal_)){}
-    template<typename U> __HOST_DEVICE__ IvyVariable(IvyConstant<U> const& value) : clientmgr_t(), value_(__STATIC_CAST__(T, value.value())), infinitesimal_(0){}
-    __HOST_DEVICE__ IvyVariable(IvyConstant<T> const& value) : clientmgr_t(), value_(value.value()), infinitesimal_(0){}
-    __HOST_DEVICE__ IvyVariable(IvyConstant<T>&& value) : clientmgr_t(), value_(value.value()), infinitesimal_(0){}
+    __HOST_DEVICE__ IvyVariable() : clientmgr_t(), value_(0){}
+    template<typename U, ENABLE_IF_ARITHMETIC(U)> __HOST_DEVICE__ IvyVariable(U const& value) : clientmgr_t(), value_(__STATIC_CAST__(T, value)){}
+    __HOST_DEVICE__ IvyVariable(T const& value) : clientmgr_t(), value_(value){}
+    __HOST_DEVICE__ IvyVariable(T&& value) : clientmgr_t(), value_(std_util::move(value)){}
+    template<typename U> __HOST_DEVICE__ IvyVariable(IvyVariable<U> const& other) : clientmgr_t(), value_(__STATIC_CAST__(T, other.value())){}
+    __HOST_DEVICE__ IvyVariable(IvyVariable<T> const& other) : clientmgr_t(), value_(other.value_){}
+    __HOST_DEVICE__ IvyVariable(IvyVariable<T>&& other) : clientmgr_t(), value_(std_util::move(other.value_)){}
+    template<typename U> __HOST_DEVICE__ IvyVariable(IvyConstant<U> const& value) : clientmgr_t(), value_(__STATIC_CAST__(T, value.value())){}
+    __HOST_DEVICE__ IvyVariable(IvyConstant<T> const& value) : clientmgr_t(), value_(value.value()){}
+    __HOST_DEVICE__ IvyVariable(IvyConstant<T>&& value) : clientmgr_t(), value_(value.value()){}
     __HOST_DEVICE__ ~IvyVariable(){}
 
     // Assignment operators
@@ -59,13 +56,11 @@ namespace IvyMath{
     }
     __HOST_DEVICE__ IvyVariable<T>& operator=(IvyVariable<T> const& other){
       this->value_ = other.value_;
-      this->infinitesimal_ = other.infinitesimal_;
       this->update_clients_modified();
       return *this;
     }
     __HOST_DEVICE__ IvyVariable<T>& operator=(IvyVariable<T>&& other){
       this->value_ = std_util::move(other.value_);
-      this->infinitesimal_ = std_util::move(other.infinitesimal_);
       this->update_clients_modified();
       return *this;
     }
@@ -104,12 +99,10 @@ namespace IvyMath{
 
     // Set functions
     __HOST_DEVICE__ void set_value(T const& value){ this->value_ = value; this->update_clients_modified(); }
-    __HOST_DEVICE__ void set_infinitesimal(T const& infinitesimal){ this->infinitesimal_ = infinitesimal; this->update_clients_modified(); }
 
     // Get functions
     //__HOST_DEVICE__ value_t& value(){ return this->value_; }
     __HOST_DEVICE__ value_t const& value() const{ return this->value_; }
-    __HOST_DEVICE__ value_t const& infinitesimal() const{ return this->infinitesimal_; }
 
     // IvyVariables are differentiable objects.
     __HOST_DEVICE__ constexpr bool is_differentiable() __NOEXCEPT__ { return true; }

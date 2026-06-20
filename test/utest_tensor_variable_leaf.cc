@@ -15,7 +15,9 @@
  *
  * This replaces the parallel SoA prototype: there is a single op-definition
  * location (IvyMathBaseArithmetic, namespace IvyMath) and the contiguous leaf
- * plugs into it directly.
+ * plugs into it directly. Also covers the full cell family
+ * (IvyTensorRealCell / IvyTensorComplexCell over variable/constant value tags)
+ * so a contiguous tensor leaf exists for every domain x value combination.
  */
 
 #include "common_test_defs.h"
@@ -112,6 +114,47 @@ void utest(){
     auto f = Exp(t);
     auto g = f->gradient(s);
     check(all_close(g->value(), 0.0), "dExp(t)/ds == 0 for unrelated s");
+  }
+
+  // --- Cell family: domain (real/complex) x value (variable/constant) ---
+  {
+    // Sizes: contiguous, payload-only.
+    check(sizeof(IvyTensorVariableCell<double>) == sizeof(double), "sizeof(real var cell) == 8");
+    check(sizeof(IvyTensorConstantCell<double>) == sizeof(double), "sizeof(real const cell) == 8");
+    check(sizeof(IvyTensorComplexVariableCell<double>) == 2*sizeof(double), "sizeof(complex var cell) == 16");
+    check(sizeof(IvyTensorComplexConstantCell<double>) == 2*sizeof(double), "sizeof(complex const cell) == 16");
+
+    // Domain / value tags drive the operability machinery.
+    check(is_real_v<IvyTensorVariableCell<double>> && is_variable_v<IvyTensorVariableCell<double>>, "real var cell: real + variable tags");
+    check(is_real_v<IvyTensorConstantCell<double>> && is_constant_v<IvyTensorConstantCell<double>>, "real const cell: real + constant tags");
+    check(is_complex_v<IvyTensorComplexVariableCell<double>> && is_variable_v<IvyTensorComplexVariableCell<double>>, "complex var cell: complex + variable tags");
+    check(is_complex_v<IvyTensorComplexConstantCell<double>> && is_constant_v<IvyTensorComplexConstantCell<double>>, "complex const cell: complex + constant tags");
+
+    // is_differentiable: only the real variable cell seeds gradients.
+    check(is_differentiable(IvyTensorVariableCell<double>(1.0)), "real var cell is differentiable");
+    check(!is_differentiable(IvyTensorConstantCell<double>(1.0)), "real const cell is NOT differentiable");
+  }
+
+  // --- Real constant tensor: evaluates through the ops but is not differentiable ---
+  {
+    auto tc = TensorConstant<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorConstantCell<double>(x0));
+    check(!is_differentiable(*tc), "constant tensor is NOT differentiable");
+    auto f = Exp(tc);
+    check(all_close(f->value(), std::exp(x0)), "Exp(constant tensor) value == exp(x0)");
+  }
+
+  // --- Complex cells: value access, conjugation, contiguous tensor construction ---
+  {
+    IvyTensorComplexVariableCell<double> z(3.0, 4.0);
+    check(close(z.Re(), 3.0) && close(z.Im(), 4.0), "complex cell Re/Im");
+    check(close(z.norm(), 5.0), "complex cell norm == 5");
+    check(is_conjugatable<IvyTensorComplexVariableCell<double>>, "complex cell is conjugatable");
+    conjugate(z);
+    check(close(z.Im(), -4.0), "conjugate negates Im");
+
+    auto zt = TensorComplexVariable<double>(shape.get_memory_type(), shape.gpu_stream(), shape, IvyTensorComplexVariableCell<double>(1.0, 2.0));
+    check(zt->num_elements() == 6, "complex variable tensor has 6 elements");
+    check(close((*zt)[0].Re(), 1.0) && close((*zt)[0].Im(), 2.0), "complex variable tensor element Re/Im");
   }
 
   __PRINT_INFO__("=== ALL utest_tensor_variable_leaf tests PASSED ===\n");
